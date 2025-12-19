@@ -13,7 +13,7 @@ export const config = {
     ],
 }
 
-export default async function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
     const url = req.nextUrl
 
     // Get hostname of request (e.g. demo.getcollectify.com, demo.localhost:3000)
