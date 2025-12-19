@@ -8,6 +8,8 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import DebtsTab from './debts-tab'
 import PaymentsTab from './payments-tab'
+import NotesTab from './notes-tab'
+import PromisesTab from './promises-tab'
 
 export default async function CustomerDetailPage({
     params,
@@ -42,6 +44,20 @@ export default async function CustomerDetailPage({
         .eq('customer_id', id)
         .order('payment_date', { ascending: false })
 
+    // 4. Fetch Notes
+    const { data: notes } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('customer_id', id)
+        .order('created_at', { ascending: false })
+
+    // 5. Fetch Promises
+    const { data: promises } = await supabase
+        .from('promises')
+        .select('*')
+        .eq('customer_id', id)
+        .order('promise_date', { ascending: true })
+
     const totalDebt = debts?.reduce((acc, curr) => acc + (curr.remaining_amount || 0), 0) || 0
 
     return (
@@ -75,27 +91,11 @@ export default async function CustomerDetailPage({
                 </TabsContent>
 
                 <TabsContent value="notes">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>Notlar</CardTitle>
-                            <Button size="sm" variant="outline">Not Ekle</Button>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">Notlar burada listelenecek.</p>
-                        </CardContent>
-                    </Card>
+                    <NotesTab customerId={id} notes={notes || []} />
                 </TabsContent>
 
                 <TabsContent value="promises">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>Ödeme Sözleri</CardTitle>
-                            <Button size="sm" variant="outline">Söz Ekle</Button>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">Ödeme sözleri burada listelenecek.</p>
-                        </CardContent>
-                    </Card>
+                    <PromisesTab customerId={id} promises={promises || []} />
                 </TabsContent>
 
                 <TabsContent value="payments">
