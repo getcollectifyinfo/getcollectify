@@ -9,10 +9,10 @@ import {
     TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { formatDistanceToNow, isPast, parseISO } from 'date-fns'
 import { tr } from 'date-fns/locale'
+import { DashboardClient } from './dashboard-client'
 
 export default async function DashboardPage({ params }: { params: Promise<{ domain: string }> }) {
     const { domain } = await params
@@ -42,6 +42,22 @@ export default async function DashboardPage({ params }: { params: Promise<{ doma
 
     // Calculate totals for placeholders (optional improvement)
     const totalReceivable = debts?.reduce((acc, debt) => acc + debt.remaining_amount, 0) || 0
+
+    // Prepare debts data for client component
+    const debtsWithFormatting = debts?.map((debt) => {
+        const dueDate = parseISO(debt.due_date)
+        const isOverdue = isPast(dueDate)
+        const delayText = isOverdue
+            ? formatDistanceToNow(dueDate, { locale: tr, addSuffix: false }) + ' gecikme'
+            : formatDistanceToNow(dueDate, { locale: tr, addSuffix: false }) + ' kaldı'
+
+        return {
+            ...debt,
+            dueDateFormatted: dueDate.toLocaleDateString('tr-TR'),
+            isOverdue,
+            delayText,
+        }
+    }) || []
 
     return (
         <div className="flex flex-col gap-6">
@@ -94,73 +110,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ doma
                 </Card>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-1">
-                <Card className="col-span-1">
-                    <CardHeader>
-                        <CardTitle>Alacak Listesi & İşlem Takvimi</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Müşteri</TableHead>
-                                    <TableHead>Borç Tipi</TableHead>
-                                    <TableHead>Vade Tarihi</TableHead>
-                                    <TableHead>Gecikme</TableHead>
-                                    <TableHead className="text-right">Tutar</TableHead>
-                                    <TableHead className="text-right">İşlem</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {debts?.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                                            Açık borç bulunamadı.
-                                        </TableCell>
-                                    </TableRow>
-                                ) : (
-                                    debts?.map((debt) => {
-                                        const dueDate = parseISO(debt.due_date)
-                                        const isOverdue = isPast(dueDate)
-                                        const delayText = isOverdue
-                                            ? formatDistanceToNow(dueDate, { locale: tr, addSuffix: false }) + ' gecikme'
-                                            : formatDistanceToNow(dueDate, { locale: tr, addSuffix: false }) + ' kaldı'
-
-                                        return (
-                                            <TableRow key={debt.id}>
-                                                <TableCell className="font-medium">
-                                                    <Link href={`/customers/${debt.customer_id}`} className="hover:underline text-blue-600">
-                                                        {debt.customers?.name || 'Bilinmeyen Müşteri'}
-                                                    </Link>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline">{debt.debt_type}</Badge>
-                                                </TableCell>
-                                                <TableCell>{dueDate.toLocaleDateString('tr-TR')}</TableCell>
-                                                <TableCell>
-                                                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${isOverdue ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                                                        {delayText}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell className="text-right font-bold">
-                                                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: debt.currency }).format(debt.remaining_amount)}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button size="sm" variant="secondary" asChild>
-                                                        <Link href={`/customers/${debt.customer_id}?tab=notes`}>
-                                                            Not Ekle
-                                                        </Link>
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </div>
+            <DashboardClient debts={debtsWithFormatting} />
         </div>
     )
 }
