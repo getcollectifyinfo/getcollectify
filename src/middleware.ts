@@ -38,9 +38,7 @@ export default async function middleware(req: NextRequest) {
         // Actually, we want to map root domain to (marketing) folder if we use that structure.
         // But usually we just handle it in app/page.tsx or similar.
         // However, for multi-tenant, it's cleaner to rewrite to a dedicated folder.
-        return NextResponse.rewrite(
-            new URL(`/(marketing)${path === '/' ? '' : path}`, req.url)
-        )
+        return NextResponse.next()
     }
 
     // special case for demo.getcollectify.com
