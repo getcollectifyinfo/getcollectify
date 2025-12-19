@@ -16,27 +16,29 @@ import { tr } from 'date-fns/locale'
 
 export default async function DashboardPage({ params }: { params: Promise<{ domain: string }> }) {
     const { domain } = await params
-    const supabase = await createClient()
 
-    const { data: { user } } = await supabase.auth.getUser()
-    console.log('Dashboard User:', user?.email)
-
-    // Fetch debts with customer details
-    const { data: debts, error } = await supabase
-        .from('debts')
-        .select(`
-            *,
-            customers (
-                name
-            )
-        `)
-        .eq('status', 'open')
-        .order('due_date', { ascending: true })
-        .limit(10)
-
-    console.log('DEBUG_DEBTS:', { count: debts?.length, error, user: (await supabase.auth.getUser()).data.user?.email })
-
-    console.log('Debts Fetch:', debts?.length, error)
+    // For demo subdomain, use service role to bypass RLS issues
+    let debts = null
+    if (domain.startsWith('demo')) {
+        const { getDemoDebts } = await import('@/app/actions/get-demo-debts')
+        const result = await getDemoDebts()
+        debts = result.debts
+    } else {
+        // For non-demo, use regular RLS-protected query
+        const supabase = await createClient()
+        const { data } = await supabase
+            .from('debts')
+            .select(`
+                *,
+                customers (
+                    name
+                )
+            `)
+            .eq('status', 'open')
+            .order('due_date', { ascending: true })
+            .limit(10)
+        debts = data
+    }
 
     // Calculate totals for placeholders (optional improvement)
     const totalReceivable = debts?.reduce((acc, debt) => acc + debt.remaining_amount, 0) || 0

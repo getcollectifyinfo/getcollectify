@@ -1,0 +1,29 @@
+-- ALTERNATIVE: Use service role key to bypass RLS
+-- This creates a server action that uses service role to fetch data
+
+-- File: src/app/actions/get-demo-debts.ts
+'use server'
+
+import { createClient } from '@supabase/supabase-js'
+
+export async function getDemoDebts() {
+  // Use service role key to bypass RLS
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data: debts, error } = await supabase
+    .from('debts')
+    .select(`
+      *,
+      customers (
+        name
+      )
+    `)
+    .eq('status', 'open')
+    .order('due_date', { ascending: true })
+    .limit(10)
+
+  return { debts, error }
+}
