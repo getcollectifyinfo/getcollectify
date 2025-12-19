@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import DebtsTab from './debts-tab'
+import PaymentsTab from './payments-tab'
 
 export default async function CustomerDetailPage({
     params,
@@ -32,6 +34,13 @@ export default async function CustomerDetailPage({
         .select('*')
         .eq('customer_id', id)
         .order('due_date')
+
+    // 3. Fetch Payments
+    const { data: payments } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('customer_id', id)
+        .order('payment_date', { ascending: false })
 
     const totalDebt = debts?.reduce((acc, curr) => acc + (curr.remaining_amount || 0), 0) || 0
 
@@ -62,26 +71,7 @@ export default async function CustomerDetailPage({
                 </TabsList>
 
                 <TabsContent value="debts">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>Borç Listesi</CardTitle>
-                            <Button size="sm">Borç Ekle</Button>
-                        </CardHeader>
-                        <CardContent>
-                            {debts?.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">Kayıtlı borç bulunmuyor.</p>
-                            ) : (
-                                <ul className="space-y-2">
-                                    {debts?.map((debt: any) => (
-                                        <li key={debt.id} className="flex justify-between border-b pb-2">
-                                            <span>{new Date(debt.due_date).toLocaleDateString('tr-TR')} - {debt.debt_type}</span>
-                                            <span className="font-bold">{debt.remaining_amount} {debt.currency}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <DebtsTab customerId={id} debts={debts || []} />
                 </TabsContent>
 
                 <TabsContent value="notes">
@@ -109,15 +99,7 @@ export default async function CustomerDetailPage({
                 </TabsContent>
 
                 <TabsContent value="payments">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>Tahsilat Geçmişi</CardTitle>
-                            <Button size="sm">Tahsilat Ekle</Button>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground">Tahsilatlar burada listelenecek.</p>
-                        </CardContent>
-                    </Card>
+                    <PaymentsTab customerId={id} payments={payments || []} />
                 </TabsContent>
             </Tabs>
         </div>
