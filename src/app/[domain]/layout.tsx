@@ -1,6 +1,7 @@
-
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import DemoSwitcher from '@/components/demo-switcher'
+import { createClient } from '@/lib/supabase/server'
 
 export default async function TenantLayout({
     children,
@@ -10,13 +11,27 @@ export default async function TenantLayout({
     params: Promise<{ domain: string }>
 }) {
     const { domain } = await params
+    const isDemo = domain.startsWith('demo') // demo.getcollectify.com or demo.localhost
+
+    // Get current user role for demo switcher active state
+    let currentRole = 'admin' // default
+    if (isDemo) {
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+            if (user.email?.includes('admin')) currentRole = 'admin'
+            else if (user.email?.includes('accounting')) currentRole = 'accounting'
+            else if (user.email?.includes('manager')) currentRole = 'manager'
+            else if (user.email?.includes('seller')) currentRole = 'seller'
+        }
+    }
 
     return (
         <div className="flex min-h-screen flex-col md:flex-row">
             {/* Sidebar */}
             <aside className="w-full border-r bg-muted/40 md:w-64 md:min-h-screen">
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-                    <Link href={`/ `} className="flex items-center gap-2 font-semibold">
+                    <Link href={`/`} className="flex items-center gap-2 font-semibold">
                         <span className="">Collectify</span>
                     </Link>
                 </div>
@@ -67,10 +82,13 @@ export default async function TenantLayout({
                         <div className="h-8 w-8 rounded-full bg-slate-200"></div>
                     </Button>
                 </header>
-                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 relative">
                     {children}
                 </main>
             </div>
+
+            {/* Demo Switcher Widget */}
+            {isDemo && <DemoSwitcher currentRole={currentRole} />}
         </div>
     )
 }

@@ -22,12 +22,12 @@ interface Content {
 
 const content: Record<Lang, Content> = {
     en: {
-        nav: { features: 'Features', pricing: 'Pricing', login: 'Login', start: 'Start Free Trial' },
+        nav: { features: 'Features', pricing: 'Pricing', login: 'Login', start: 'Try Live Demo' },
         hero: {
             headline: 'Turn Your Sales Team Into a Collection Engine',
             subheadline: 'Collectify helps sales, finance, and management work together to accelerate cash flow — without conflict.',
-            start: 'Start Free Trial',
-            demo: 'View Demo'
+            start: 'Try Live Demo',
+            demo: 'How it works'
         },
         problem: {
             title: 'Why collections slow down',
@@ -68,16 +68,16 @@ const content: Record<Lang, Content> = {
             ]
         },
         demo: { title: 'See it in action', button: 'Open Live Demo' },
-        cta: { text: 'Cash flow is a team sport.', button: 'Start Free Trial' },
+        cta: { text: 'Cash flow is a team sport.', button: 'Try Live Demo' },
         footer: { desc: 'The modern operating system for B2B collections.' }
     },
     tr: {
-        nav: { features: 'Özellikler', pricing: 'Fiyatlandırma', login: 'Giriş', start: 'Ücretsiz Deneyin' },
+        nav: { features: 'Özellikler', pricing: 'Fiyatlandırma', login: 'Giriş', start: 'Canlı Demo' },
         hero: {
             headline: 'Satış Ekibinizi Tahsilat Motoruna Dönüştürün',
             subheadline: 'Collectify, satış, muhasebe ve yöneticileri tek bir tahsilat sürecinde buluşturur, nakit akışını hızlandırır.',
-            start: 'Ücretsiz Deneyin',
-            demo: 'Demo’yu İncele'
+            start: 'Canlı Demo',
+            demo: 'Nasıl Çalışır?'
         },
         problem: {
             title: 'Tahsilatlar neden gecikir?',
@@ -118,7 +118,7 @@ const content: Record<Lang, Content> = {
             ]
         },
         demo: { title: 'Canlı Görün', button: 'Canlı Demo\'yu Aç' },
-        cta: { text: 'Nakit akışı bir takım sporudur.', button: 'Ücretsiz Deneyin' },
+        cta: { text: 'Nakit akışı bir takım sporudur.', button: 'Canlı Demo\'yu Dene' },
         footer: { desc: 'B2B tahsilatları için modern işletim sistemi.' }
     }
 }
@@ -148,8 +148,10 @@ export default function LandingPage({ lang = 'en' }: { lang?: Lang }) {
 
                     <div className="hidden md:flex gap-4 items-center">
                         <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-blue-600">{t.nav.login}</Link>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6">
-                            {t.nav.start}
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6" asChild>
+                            <Link href="https://demo.getcollectify.com">
+                                {t.nav.start}
+                            </Link>
                         </Button>
                     </div>
 
@@ -181,11 +183,13 @@ export default function LandingPage({ lang = 'en' }: { lang?: Lang }) {
                                 {t.hero.subheadline}
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6 rounded-full shadow-lg hover:shadow-xl transition-all">
-                                    {t.hero.start}
+                                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6 rounded-full shadow-lg hover:shadow-xl transition-all" asChild>
+                                    <Link href="https://demo.getcollectify.com">
+                                        {t.hero.start}
+                                    </Link>
                                 </Button>
                                 <Button size="lg" variant="outline" className="text-lg px-8 py-6 rounded-full border-2" asChild>
-                                    <Link href="https://demo.getcollectify.com" target="_blank">
+                                    <Link href="#how">
                                         {t.hero.demo}
                                     </Link>
                                 </Button>
@@ -321,7 +325,7 @@ export default function LandingPage({ lang = 'en' }: { lang?: Lang }) {
                 </section>
 
                 {/* How It Works */}
-                <section className="py-20 px-4">
+                <section id="how" className="py-20 px-4">
                     <div className="container mx-auto max-w-4xl text-center">
                         <h2 className="text-3xl font-bold mb-12">{t.how.title}</h2>
                         <div className="flex flex-col md:flex-row justify-between items-center gap-8 relative">
@@ -347,8 +351,10 @@ export default function LandingPage({ lang = 'en' }: { lang?: Lang }) {
                             {t.cta.text}
                         </h2>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button size="lg" variant="secondary" className="text-blue-900 font-bold text-lg px-10 py-6 rounded-full">
-                                {t.cta.button}
+                            <Button size="lg" variant="secondary" className="text-blue-900 font-bold text-lg px-10 py-6 rounded-full" asChild>
+                                <Link href="https://demo.getcollectify.com">
+                                    {t.cta.button}
+                                </Link>
                             </Button>
                         </div>
                     </div>
