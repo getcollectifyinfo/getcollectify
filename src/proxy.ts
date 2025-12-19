@@ -21,45 +21,31 @@ export default async function proxy(req: NextRequest) {
         .get('host')!
         .replace('.localhost:3000', `.${process.env.ROOT_DOMAIN}`)
 
-    // Search params, etc.
-    const searchParams = req.nextUrl.searchParams.toString()
-    // Get the pathname of the request (e.g. /, /about, /blog/first-post)
-    const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ''
-        }`
-
-    // rewrites for app pages
-    // if hostname is the root domain (getcollectify.com)
+    // 1. Root Domain / Localhost check
+    // If it's the main domain, serve the proper page (marketing or root app)
+    // using NextResponse.next() to pass through.
     if (
-        hostname === 'getcollectify.com' ||
+        hostname === 'localhost:3000' ||
         hostname === 'www.getcollectify.com' ||
+        hostname === 'getcollectify.com' ||
         hostname === process.env.ROOT_DOMAIN
     ) {
-        // If it's the root domain and the path is empty, rewrite to / (marketing)
-        // Actually, we want to map root domain to (marketing) folder if we use that structure.
-        // But usually we just handle it in app/page.tsx or similar.
-        // However, for multi-tenant, it's cleaner to rewrite to a dedicated folder.
-        // special case for localhost to allow marketing page local dev
-        if (
-            hostname === 'localhost:3000' ||
-            hostname === 'www.getcollectify.com' ||
-            hostname === 'getcollectify.com' ||
-            hostname === process.env.ROOT_DOMAIN
-        ) {
-            return NextResponse.next()
-        }
-
-        // rewrite everything else to `/[domain]/... dynamic route
-        const searchParams = req.nextUrl.searchParams.toString()
-        const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ''}`
-
-        // For localhost subdomains (e.g. foo.localhost:3000)
-        let subdomain = hostname.split('.')[0]
-
-        // Safety check: if hostname is localhost:3000 but logic fell through (unlikely with above check),
-        // ensure we don't treat 'localhost:3000' as subdomain
-        if (subdomain === 'localhost:3000' || subdomain === 'localhost') {
-            return NextResponse.next()
-        }
-
-        return NextResponse.rewrite(new URL(`/${subdomain}${path}`, req.url))
+        return NextResponse.next()
     }
+
+    // 2. Subdomain Rewrite
+    // Rewrite everything else to `/[domain]/...` dynamic route
+    const searchParams = req.nextUrl.searchParams.toString()
+    const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ''}`
+
+    // For localhost subdomains (e.g. foo.localhost:3000)
+    let subdomain = hostname.split('.')[0]
+
+    // Safety check: if code reaches here with 'localhost:3000' (should be caught above),
+    // ensure we don't treat it as a subdomain.
+    if (subdomain === 'localhost:3000' || subdomain === 'localhost') {
+        return NextResponse.next()
+    }
+
+    return NextResponse.rewrite(new URL(`/${subdomain}${path}`, req.url))
+}
