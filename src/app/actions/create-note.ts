@@ -45,7 +45,6 @@ export async function createNote(input: CreateNoteInput) {
             .insert({
                 company_id: customer.company_id,
                 customer_id: input.customerId,
-                debt_id: input.debtId,
                 contact_person: input.contactPerson,
                 phone: input.phone,
                 text: input.noteText,
