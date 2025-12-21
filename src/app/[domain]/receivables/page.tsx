@@ -15,7 +15,32 @@ export default async function ReceivablesPage({ params }: { params: Promise<{ do
     let debtTypes = ['Cari', 'Çek', 'Senet']
     let currencies = ['TRY', 'USD', 'EUR']
 
-    if (user) {
+    // For demo subdomain, get demo company ID
+    if (domain.startsWith('demo')) {
+        const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+        const serviceSupabase = createServiceClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+                auth: {
+                    autoRefreshToken: false,
+                    persistSession: false
+                }
+            }
+        )
+
+        const { data: demoCompany } = await serviceSupabase
+            .from('companies')
+            .select('id, debt_types, currencies')
+            .eq('slug', 'demo')
+            .single()
+
+        if (demoCompany) {
+            companyId = demoCompany.id
+            debtTypes = demoCompany.debt_types || debtTypes
+            currencies = demoCompany.currencies || currencies
+        }
+    } else if (user) {
         const { data: profile } = await supabase
             .from('profiles')
             .select('company_id')
