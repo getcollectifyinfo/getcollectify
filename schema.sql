@@ -9,6 +9,8 @@ create table companies (
   base_currency text not null default 'TRY',
   timezone text not null default 'Europe/Istanbul',
   logo_url text,
+  debt_types jsonb default '["Cari", "Çek", "Senet"]'::jsonb,
+  currencies jsonb default '["TRY", "USD", "EUR"]'::jsonb,
   created_at timestamptz default now()
 );
 

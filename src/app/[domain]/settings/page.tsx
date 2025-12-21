@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import GeneralSettingsTab from './general-tab'
 import FxRatesTab from './fx-rates-tab'
 import UsersTab from './users-tab'
+import ConfigTab from './config-tab'
 
 export default async function SettingsPage({
     params,
@@ -35,12 +36,17 @@ export default async function SettingsPage({
             <Tabs defaultValue="general" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="general">Genel</TabsTrigger>
+                    <TabsTrigger value="config">Yapılandırma</TabsTrigger>
                     <TabsTrigger value="users">Kullanıcılar</TabsTrigger>
                     <TabsTrigger value="fx">Döviz Kurları</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="general">
                     <GeneralSettingsTab company={company} />
+                </TabsContent>
+
+                <TabsContent value="config">
+                    <ConfigTab company={company} />
                 </TabsContent>
 
                 <TabsContent value="users">
