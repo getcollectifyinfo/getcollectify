@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -13,7 +13,10 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import AddNoteModal from '@/components/add-note-modal'
+import CustomerTimeline from '@/components/customer-timeline'
+import { getCustomerTimeline } from '@/app/actions/get-customer-timeline'
 
 interface Debt {
     id: string
@@ -33,14 +36,60 @@ interface DashboardClientProps {
     debts: Debt[]
 }
 
+interface TimelineData {
+    notes: any[]
+    promises: any[]
+}
+
 export function DashboardClient({ debts }: DashboardClientProps) {
     const [modalOpen, setModalOpen] = useState(false)
     const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null)
+    const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set())
+    const [timelineData, setTimelineData] = useState<Record<string, TimelineData>>({})
+    const [loadingTimeline, setLoadingTimeline] = useState<Set<string>>(new Set())
 
     function openNoteModal(debt: Debt) {
         setSelectedDebt(debt)
         setModalOpen(true)
     }
+
+    async function toggleCustomerExpand(customerId: string) {
+        const newExpanded = new Set(expandedCustomers)
+
+        if (newExpanded.has(customerId)) {
+            // Collapse
+            newExpanded.delete(customerId)
+        } else {
+            // Expand - fetch timeline data if not already loaded
+            newExpanded.add(customerId)
+
+            if (!timelineData[customerId]) {
+                setLoadingTimeline(prev => new Set(prev).add(customerId))
+                const data = await getCustomerTimeline(customerId)
+                setTimelineData(prev => ({ ...prev, [customerId]: data }))
+                setLoadingTimeline(prev => {
+                    const next = new Set(prev)
+                    next.delete(customerId)
+                    return next
+                })
+            }
+        }
+
+        setExpandedCustomers(newExpanded)
+    }
+
+    // Refresh timeline data when modal closes (note was added)
+    useEffect(() => {
+        if (!modalOpen && selectedDebt) {
+            // Refresh timeline for the customer
+            const customerId = selectedDebt.customer_id
+            if (expandedCustomers.has(customerId)) {
+                getCustomerTimeline(customerId).then(data => {
+                    setTimelineData(prev => ({ ...prev, [customerId]: data }))
+                })
+            }
+        }
+    }, [modalOpen])
 
     return (
         <>
@@ -69,36 +118,69 @@ export function DashboardClient({ debts }: DashboardClientProps) {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    debts.map((debt) => (
-                                        <TableRow key={debt.id}>
-                                            <TableCell className="font-medium">
-                                                <Link href={`/customers/${debt.customer_id}`} className="hover:underline text-blue-600">
-                                                    {debt.customers?.name || 'Bilinmeyen Müşteri'}
-                                                </Link>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline">{debt.debt_type}</Badge>
-                                            </TableCell>
-                                            <TableCell>{debt.dueDateFormatted}</TableCell>
-                                            <TableCell>
-                                                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${debt.isOverdue ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                                                    {debt.delayText}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="text-right font-bold">
-                                                {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: debt.currency }).format(debt.remaining_amount)}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button
-                                                    size="sm"
-                                                    variant="secondary"
-                                                    onClick={() => openNoteModal(debt)}
-                                                >
-                                                    Not Ekle
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                    debts.map((debt) => {
+                                        const isExpanded = expandedCustomers.has(debt.customer_id)
+                                        const isLoading = loadingTimeline.has(debt.customer_id)
+
+                                        return (
+                                            <>
+                                                <TableRow key={debt.id}>
+                                                    <TableCell className="font-medium">
+                                                        <button
+                                                            onClick={() => toggleCustomerExpand(debt.customer_id)}
+                                                            className="flex items-center gap-2 hover:underline text-blue-600"
+                                                        >
+                                                            {isExpanded ? (
+                                                                <ChevronDown className="w-4 h-4" />
+                                                            ) : (
+                                                                <ChevronRight className="w-4 h-4" />
+                                                            )}
+                                                            {debt.customers?.name || 'Bilinmeyen Müşteri'}
+                                                        </button>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline">{debt.debt_type}</Badge>
+                                                    </TableCell>
+                                                    <TableCell>{debt.dueDateFormatted}</TableCell>
+                                                    <TableCell>
+                                                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${debt.isOverdue ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                                            {debt.delayText}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-bold">
+                                                        {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: debt.currency }).format(debt.remaining_amount)}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button
+                                                            size="sm"
+                                                            variant="secondary"
+                                                            onClick={() => openNoteModal(debt)}
+                                                        >
+                                                            Not Ekle
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+
+                                                {/* Expanded timeline row */}
+                                                {isExpanded && (
+                                                    <TableRow>
+                                                        <TableCell colSpan={6} className="p-0 bg-muted/30">
+                                                            {isLoading ? (
+                                                                <div className="py-8 text-center text-sm text-muted-foreground">
+                                                                    Yükleniyor...
+                                                                </div>
+                                                            ) : timelineData[debt.customer_id] ? (
+                                                                <CustomerTimeline
+                                                                    notes={timelineData[debt.customer_id].notes}
+                                                                    promises={timelineData[debt.customer_id].promises}
+                                                                />
+                                                            ) : null}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </>
+                                        )
+                                    })
                                 )}
                             </TableBody>
                         </Table>
