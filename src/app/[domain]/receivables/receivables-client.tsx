@@ -14,7 +14,9 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import AddNoteModal from '@/components/add-note-modal'
+import AddReceivableModal from '@/components/add-receivable-modal'
 import CustomerTimeline from '@/components/customer-timeline'
 import { getCustomerTimeline } from '@/app/actions/get-customer-timeline'
 
@@ -34,6 +36,9 @@ interface Debt {
 
 interface ReceivablesClientProps {
     debts: Debt[]
+    companyId: string
+    debtTypes: string[]
+    currencies: string[]
 }
 
 interface TimelineData {
@@ -41,8 +46,9 @@ interface TimelineData {
     promises: any[]
 }
 
-export function ReceivablesClient({ debts }: ReceivablesClientProps) {
-    const [modalOpen, setModalOpen] = useState(false)
+export function ReceivablesClient({ debts, companyId, debtTypes, currencies }: ReceivablesClientProps) {
+    const [noteModalOpen, setNoteModalOpen] = useState(false)
+    const [receivableModalOpen, setReceivableModalOpen] = useState(false)
     const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null)
     const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set())
     const [timelineData, setTimelineData] = useState<Record<string, TimelineData>>({})
@@ -50,7 +56,7 @@ export function ReceivablesClient({ debts }: ReceivablesClientProps) {
 
     function openNoteModal(debt: Debt) {
         setSelectedDebt(debt)
-        setModalOpen(true)
+        setNoteModalOpen(true)
     }
 
     async function toggleCustomerExpand(customerId: string) {
@@ -80,7 +86,7 @@ export function ReceivablesClient({ debts }: ReceivablesClientProps) {
 
     // Refresh timeline data when modal closes (note was added)
     useEffect(() => {
-        if (!modalOpen && selectedDebt) {
+        if (!noteModalOpen && selectedDebt) {
             // Refresh timeline for the customer
             const customerId = selectedDebt.customer_id
             if (expandedCustomers.has(customerId)) {
@@ -89,14 +95,18 @@ export function ReceivablesClient({ debts }: ReceivablesClientProps) {
                 })
             }
         }
-    }, [modalOpen])
+    }, [noteModalOpen])
 
     return (
         <>
             <div className="grid gap-4 md:grid-cols-1">
                 <Card className="col-span-1">
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                         <CardTitle>Alacak Listesi & İşlem Takvimi</CardTitle>
+                        <Button onClick={() => setReceivableModalOpen(true)}>
+                            <Plus className="w-4 h-4 mr-2" />
+                            Alacak Ekle
+                        </Button>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -190,14 +200,22 @@ export function ReceivablesClient({ debts }: ReceivablesClientProps) {
 
             {selectedDebt && (
                 <AddNoteModal
-                    open={modalOpen}
-                    onOpenChange={setModalOpen}
+                    open={noteModalOpen}
+                    onOpenChange={setNoteModalOpen}
                     customerId={selectedDebt.customer_id}
                     debtId={selectedDebt.id}
                     debtAmount={selectedDebt.remaining_amount}
                     currency={selectedDebt.currency}
                 />
             )}
+
+            <AddReceivableModal
+                open={receivableModalOpen}
+                onOpenChange={setReceivableModalOpen}
+                companyId={companyId}
+                debtTypes={debtTypes}
+                currencies={currencies}
+            />
         </>
     )
 }

@@ -7,6 +7,36 @@ import { ReceivablesClient } from './receivables-client'
 export default async function ReceivablesPage({ params }: { params: Promise<{ domain: string }> }) {
     const { domain } = await params
 
+    // Fetch company settings for debt types and currencies
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    let companyId = ''
+    let debtTypes = ['Cari', 'Çek', 'Senet']
+    let currencies = ['TRY', 'USD', 'EUR']
+
+    if (user) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('company_id')
+            .eq('id', user.id)
+            .single()
+
+        if (profile) {
+            companyId = profile.company_id
+            const { data: company } = await supabase
+                .from('companies')
+                .select('debt_types, currencies')
+                .eq('id', profile.company_id)
+                .single()
+
+            if (company) {
+                debtTypes = company.debt_types || debtTypes
+                currencies = company.currencies || currencies
+            }
+        }
+    }
+
     // For demo subdomain, use service role to bypass RLS issues
     let debts = null
     if (domain.startsWith('demo')) {
@@ -15,7 +45,6 @@ export default async function ReceivablesPage({ params }: { params: Promise<{ do
         debts = result.debts
     } else {
         // For non-demo, use regular RLS-protected query
-        const supabase = await createClient()
         const { data } = await supabase
             .from('debts')
             .select(`
@@ -48,11 +77,16 @@ export default async function ReceivablesPage({ params }: { params: Promise<{ do
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex items-center">
+            <div className="flex items-center justify-between">
                 <h1 className="text-lg font-bold md:text-2xl">Alacaklar</h1>
             </div>
 
-            <ReceivablesClient debts={debtsWithFormatting} />
+            <ReceivablesClient
+                debts={debtsWithFormatting}
+                companyId={companyId}
+                debtTypes={debtTypes}
+                currencies={currencies}
+            />
         </div>
     )
 }
