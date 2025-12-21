@@ -39,6 +39,16 @@ export async function createNote(input: CreateNoteInput) {
             return { success: false, error: 'Müşteri bulunamadı' }
         }
 
+        // Get current user ID from session (for demo, use demo user)
+        // In production, this would come from the authenticated session
+        const { data: demoUser } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', 'demo-seller@collectify.com')
+            .single()
+
+        const createdByUserId = demoUser?.id
+
         // Create note
         const { error: noteError } = await supabase
             .from('notes')
@@ -48,6 +58,7 @@ export async function createNote(input: CreateNoteInput) {
                 contact_person: input.contactPerson,
                 phone: input.phone,
                 text: input.noteText,
+                created_by_user_id: createdByUserId,
             })
 
         if (noteError) {
@@ -67,6 +78,7 @@ export async function createNote(input: CreateNoteInput) {
                     amount: input.promiseAmount,
                     currency: input.currency || 'TRY',
                     status: 'planned',
+                    created_by_user_id: createdByUserId,
                 })
 
             if (promiseError) {
