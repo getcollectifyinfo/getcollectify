@@ -18,14 +18,49 @@ export default async function CustomersPage({
     params: Promise<{ domain: string }>
 }) {
     const { domain } = await params
-    const supabase = await createClient()
 
-    // RLS will enforce company isolation automatically
-    const { data: customers } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('archived', false)
-        .order('name')
+    let customers = null
+
+    // For demo subdomain, use service role to bypass RLS
+    if (domain.startsWith('demo')) {
+        const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+        const supabase = createServiceClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+                auth: {
+                    autoRefreshToken: false,
+                    persistSession: false
+                }
+            }
+        )
+
+        // Get demo company customers
+        const { data: demoCompany } = await supabase
+            .from('companies')
+            .select('id')
+            .eq('slug', 'demo')
+            .single()
+
+        if (demoCompany) {
+            const { data } = await supabase
+                .from('customers')
+                .select('*')
+                .eq('company_id', demoCompany.id)
+                .eq('archived', false)
+                .order('name')
+            customers = data
+        }
+    } else {
+        // For non-demo, use regular RLS-protected query
+        const supabase = await createClient()
+        const { data } = await supabase
+            .from('customers')
+            .select('*')
+            .eq('archived', false)
+            .order('name')
+        customers = data
+    }
 
     return (
         <div className="flex flex-col gap-6">
