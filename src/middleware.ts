@@ -15,52 +15,41 @@ export const config = {
 
 export default async function middleware(req: NextRequest) {
     const url = req.nextUrl
-    const hostHeader = req.headers.get('host')
+    
+    // Get hostname (e.g. vercel.com, test.vercel.app, etc.)
+    let hostname = req.headers
+        .get("host")!
+        .replace(".localhost:3000", `.${process.env.ROOT_DOMAIN}`);
 
-    // Get hostname of request (e.g. demo.getcollectify.com, demo.localhost:3000)
-    const hostname = hostHeader!
-        .replace('.localhost:3000', `.${process.env.ROOT_DOMAIN}`)
-
-    console.log('Middleware Debug:', {
-        originalHost: hostHeader,
-        processedHostname: hostname,
-        rootDomain: process.env.ROOT_DOMAIN,
-        path: url.pathname
-    })
-
-    // 1. Root Domain / Localhost check
-    // If it's the main domain, serve the proper page (marketing or root app)
-    // using NextResponse.next() to pass through.
+    // Special case for Vercel preview URLs
     if (
-        hostname === 'localhost:3000' ||
-        hostname === process.env.ROOT_DOMAIN ||
-        hostname === `www.${process.env.ROOT_DOMAIN}` ||
-        hostname.endsWith('.vercel.app')
+        hostname.includes("---") &&
+        hostname.endsWith(`.${process.env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_SUFFIX}`)
     ) {
-        return NextResponse.next()
+        hostname = `${hostname.split("---")[0]}.${process.env.ROOT_DOMAIN}`;
     }
 
-    // 2. Subdomain Rewrite
-    // Rewrite everything else to `/[domain]/...` dynamic route
-    const searchParams = req.nextUrl.searchParams.toString()
-    const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ''}`
+    const searchParams = req.nextUrl.searchParams.toString();
+    // Get the pathname of the request (e.g. /, /about, /blog/first-post)
+    const path = `${url.pathname}${
+        searchParams.length > 0 ? `?${searchParams}` : ""
+    }`;
 
-    // For localhost subdomains (e.g. foo.localhost:3000)
-    const subdomain = hostname.split('.')[0]
-
-    // Safety check: if code reaches here with 'localhost:3000' (should be caught above),
-    // ensure we don't treat it as a subdomain.
-    if (subdomain === 'localhost:3000' || subdomain === 'localhost') {
-        return NextResponse.next()
+    // rewrites for app pages
+    if (hostname === `demo.${process.env.ROOT_DOMAIN}`) {
+        return NextResponse.rewrite(
+            new URL(`/demo${path === "/" ? "" : path}`, req.url)
+        );
     }
 
-    // Add x-url header so we can read the current path in Server Components (Layout)
-    const requestHeaders = new Headers(req.headers)
-    requestHeaders.set('x-url', url.pathname)
-
-    return NextResponse.rewrite(new URL(`/${subdomain}${path}`, req.url), {
-        request: {
-            headers: requestHeaders,
-        },
-    })
+    // special case for root domain
+    if (
+        hostname === "localhost:3000" ||
+        hostname === process.env.ROOT_DOMAIN
+    ) {
+        return NextResponse.next();
+    }
+    
+    // rewrite everything else to `/[domain]/[slug] dynamic route
+    return NextResponse.rewrite(new URL(`/${hostname}${path}`, req.url));
 }
