@@ -24,6 +24,13 @@ export default async function TenantLayout({
     const headersList = await headers()
     const pathname = headersList.get('x-url') || ''
 
+    console.log('Layout Debug:', {
+        domain,
+        pathname,
+        isDemo,
+        hasUser: !!user
+    })
+
     // If Demo environment and NOT logged in, redirect to login page
     // Avoid redirect loop if already on login page
     if (isDemo && !user && !pathname.endsWith('/login')) {

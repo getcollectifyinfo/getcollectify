@@ -22,6 +22,11 @@ export default function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Skip internal paths that might be missed by matcher (e.g. Turbopack HMR)
+  if (url.pathname.startsWith('/@vite') || url.pathname.startsWith('/_next')) {
+    return NextResponse.next();
+  }
+
   // Extract subdomain
   // e.g. "demo.getcollectify.com" -> "demo"
   // e.g. "demo.localhost:3000" -> "demo" (if rootDomain is "localhost:3000")
@@ -35,6 +40,13 @@ export default function middleware(req: NextRequest) {
   // Rewrite subdomain traffic to /[domain]/... routes
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-url", url.pathname);
+
+  console.log("MW Rewriting:", {
+    subdomain,
+    path,
+    urlPathname: url.pathname,
+    target: `/${subdomain}${path}`
+  });
 
   return NextResponse.rewrite(new URL(`/${subdomain}${path}`, req.url), {
     request: {

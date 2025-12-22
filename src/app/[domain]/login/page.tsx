@@ -9,6 +9,8 @@ export default async function LoginPage({
     const { domain } = await params
     const isDemo = domain.startsWith('demo')
 
+    console.log('LoginPage Debug:', { domain, isDemo })
+
     return (
         <div className="flex min-h-screen items-center justify-center py-12 px-4">
             {isDemo ? <DemoLogin /> : <LoginForm />}
