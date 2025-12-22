@@ -6,36 +6,33 @@ export const config = {
 
 export default function middleware(req: NextRequest) {
   const url = req.nextUrl;
-  const hostname = req.headers.get("host");
 
-  console.log("MW DEBUG:", {
-    originalHost: hostname,
-    rootDomain: process.env.ROOT_DOMAIN,
-    path: url.pathname,
-  });
+  const rootDomain = process.env.ROOT_DOMAIN || "getcollectify.com";
+  const hostHeader = req.headers.get("host") || "";
 
-  const currentHost = hostname!.replace(".localhost:3000", `.${process.env.ROOT_DOMAIN}`);
+  // local check
+  const isLocalhost = hostHeader.includes("localhost");
 
-  // Root domain check
+  // normalize hostname (remove port)
+  let hostname = hostHeader.replace(":3000", "");
+
+  const searchParams = url.searchParams.toString();
+  const path = `${url.pathname}${searchParams ? `?${searchParams}` : ""}`;
+
+  // Root / marketing (apex + www + localhost)
   if (
-    currentHost === "localhost:3000" ||
-    currentHost === process.env.ROOT_DOMAIN ||
-    currentHost === `www.${process.env.ROOT_DOMAIN}`
+    isLocalhost ||
+    hostname === rootDomain ||
+    hostname === `www.${rootDomain}`
   ) {
     return NextResponse.next();
   }
 
-  // Subdomain extraction
-  const subdomain = currentHost.split(".")[0];
-  
-  // Rewrite to dynamic route
-  const searchParams = url.searchParams.toString();
-  const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ""}`;
-  
-  console.log("MW REWRITE:", {
-    subdomain,
-    target: `/${subdomain}${path}`
-  });
+  // tenant = first label (subdomain)
+  const subdomain = hostname.endsWith(`.${rootDomain}`)
+    ? hostname.replace(`.${rootDomain}`, "")
+    : hostname;
 
+  // Rewrite subdomain traffic to /[domain]/... routes
   return NextResponse.rewrite(new URL(`/${subdomain}${path}`, req.url));
 }
