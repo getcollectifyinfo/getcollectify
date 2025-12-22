@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Check, User, Briefcase, Calculator, ShoppingBag } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Check, User, Briefcase, Calculator, ShoppingBag, ArrowLeft } from 'lucide-react'
+import { cn, getSiteUrl } from '@/lib/utils'
+import Link from 'next/link'
 
 const ROLES = [
     {
@@ -63,7 +64,17 @@ export default function DemoLogin() {
     }
 
     return (
-        <div className="w-full max-w-4xl grid gap-8 md:grid-cols-2">
+        <div className="w-full max-w-4xl grid gap-8 md:grid-cols-2 relative">
+            <div className="absolute -top-16 left-0">
+                <Link 
+                    href={getSiteUrl()} 
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    <ArrowLeft className="h-4 w-4" />
+                    Ana Sayfaya Dön
+                </Link>
+            </div>
+
             <div className="space-y-6">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Rol Seçiniz</h2>

@@ -63,6 +63,11 @@ export default async function TenantLayout({
         }
     }
 
+    // Special handling for Login Page: Render without Sidebar
+    if (pathname.endsWith('/login')) {
+        return <div className="min-h-screen bg-background">{children}</div>
+    }
+
     return (
         <div className="flex min-h-screen flex-col md:flex-row">
             {/* Sidebar */}
