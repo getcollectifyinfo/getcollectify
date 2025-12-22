@@ -26,7 +26,8 @@ export default async function TenantLayout({
 
     // If Demo environment and NOT logged in, redirect to login page
     // Avoid redirect loop if already on login page
-    if (isDemo && !user && pathname !== '/login') {
+    if (isDemo && !user && !pathname.endsWith('/login')) {
+        console.log('Layout Redirect Debug:', { isDemo, hasUser: !!user, pathname })
         redirect('/login')
     }
 
