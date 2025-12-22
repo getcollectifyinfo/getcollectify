@@ -14,7 +14,7 @@ export default function middleware(req: NextRequest) {
   const isLocalhost = hostHeader.includes("localhost");
 
   // normalize hostname (remove port)
-  let hostname = hostHeader.replace(":3000", "");
+  const hostname = hostHeader.replace(":3000", "");
 
   const searchParams = url.searchParams.toString();
   const path = `${url.pathname}${searchParams ? `?${searchParams}` : ""}`;
@@ -34,5 +34,12 @@ export default function middleware(req: NextRequest) {
     : hostname;
 
   // Rewrite subdomain traffic to /[domain]/... routes
-  return NextResponse.rewrite(new URL(`/${subdomain}${path}`, req.url));
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-url", url.pathname);
+
+  return NextResponse.rewrite(new URL(`/${subdomain}${path}`, req.url), {
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
