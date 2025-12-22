@@ -33,9 +33,8 @@ export default async function proxy(req: NextRequest) {
     // using NextResponse.next() to pass through.
     if (
         hostname === 'localhost:3000' ||
-        hostname === 'www.getcollectify.com' ||
-        hostname === 'getcollectify.com' ||
-        hostname === process.env.ROOT_DOMAIN
+        hostname === process.env.ROOT_DOMAIN ||
+        hostname === `www.${process.env.ROOT_DOMAIN}`
     ) {
         return NextResponse.next()
     }
