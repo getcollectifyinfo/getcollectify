@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormState } from 'react-dom'
+import { useActionState } from 'react'
 import { createCustomer } from '@/app/actions/customers'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +13,7 @@ const initialState = {
 }
 
 export default function NewCustomerPage() {
-    const [state, formAction] = useFormState(createCustomer, initialState)
+    const [state, formAction, isPending] = useActionState(createCustomer, initialState)
 
     return (
         <div className="flex flex-col gap-6 max-w-2xl mx-auto w-full">
@@ -48,8 +48,8 @@ export default function NewCustomerPage() {
                             <Button variant="outline" asChild>
                                 <Link href="/customers">İptal</Link>
                             </Button>
-                            <Button type="submit">
-                                Kaydet
+                            <Button type="submit" disabled={isPending}>
+                                {isPending ? 'Kaydediliyor...' : 'Kaydet'}
                             </Button>
                         </div>
                     </form>

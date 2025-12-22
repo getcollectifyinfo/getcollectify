@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { headers } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import { getSiteUrl } from '@/lib/utils'
 
 const signupSchema = z.object({
     companyName: z.string().min(2, 'Şirket adı en az 2 karakter olmalıdır'),
@@ -96,11 +97,18 @@ export async function signup(prevState: any, formData: FormData) {
     // Or if we are in root domain, we can't set cookies for subdomain easily without wildcard cookie config.
     // For MVP, redirect to the subdomain login page.
 
-    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
-    const domain = process.env.ROOT_DOMAIN || 'getcollectify.com'
-    const redirectUrl = `${protocol}://${slug}.${domain}/login`
+    const redirectUrl = getSiteUrl(slug, '/login')
 
     redirect(redirectUrl)
+}
+
+export async function logout() {
+    const supabase = await createClient()
+    await supabase.auth.signOut()
+    
+    const target = getSiteUrl()
+
+    redirect(target)
 }
 
 export async function login(prevState: any, formData: FormData) {

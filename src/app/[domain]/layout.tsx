@@ -2,6 +2,11 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import DemoSwitcher from '@/components/demo-switcher'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { logout } from '@/app/actions/auth'
+import { LogOut } from 'lucide-react'
 
 export default async function TenantLayout({
     children,
@@ -13,12 +18,43 @@ export default async function TenantLayout({
     const { domain } = await params
     const isDemo = domain.startsWith('demo') // demo.getcollectify.com or demo.localhost
 
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    const headersList = await headers()
+    const pathname = headersList.get('x-url') || ''
+
+    // If Demo environment and NOT logged in, redirect to login page
+    // Avoid redirect loop if already on login page
+    if (isDemo && !user && pathname !== '/login') {
+        redirect('/login')
+    }
+
     // Get current user role for demo switcher active state
     let currentRole = 'admin' // default
-    if (isDemo) {
-        const supabase = await createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
+    if (isDemo && user) {
+        // Use Admin Client to fetch profile safely (bypass RLS recursion)
+        const adminSupabase = createSupabaseClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            {
+                auth: {
+                    autoRefreshToken: false,
+                    persistSession: false
+                }
+            }
+        )
+        const { data: profile } = await adminSupabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        if (profile) {
+            if (profile.role === 'company_admin') currentRole = 'admin'
+            else currentRole = profile.role
+        } else {
+             // Fallback to email check if profile fails (shouldn't happen with admin client)
             if (user.email?.includes('admin')) currentRole = 'admin'
             else if (user.email?.includes('accounting')) currentRole = 'accounting'
             else if (user.email?.includes('manager')) currentRole = 'manager'
@@ -29,7 +65,7 @@ export default async function TenantLayout({
     return (
         <div className="flex min-h-screen flex-col md:flex-row">
             {/* Sidebar */}
-            <aside className="w-full border-r bg-muted/40 md:w-64 md:min-h-screen">
+            <aside className="w-full border-r bg-muted/40 md:w-64 md:min-h-screen flex flex-col">
                 <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
                     <Link href={`/`} className="flex items-center gap-2 font-semibold">
                         <span className="">Collectify</span>
@@ -75,6 +111,14 @@ export default async function TenantLayout({
                         </Link>
                     </nav>
                 </div>
+                <div className="p-4 border-t">
+                    <form action={logout}>
+                        <Button variant="outline" className="w-full gap-2 justify-start" type="submit">
+                            <LogOut className="h-4 w-4" />
+                            Çıkış Yap
+                        </Button>
+                    </form>
+                </div>
             </aside>
 
             {/* Main Content */}
@@ -83,6 +127,14 @@ export default async function TenantLayout({
                     <div className="w-full flex-1">
                         <h1 className="font-semibold text-lg">{domain}</h1>
                     </div>
+                    
+                    {user && (
+                        <div className="flex flex-col items-end mr-2">
+                            <span className="text-xs font-medium">{user.email}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">{user.id}</span>
+                        </div>
+                    )}
+
                     <Button variant="ghost" size="icon" className="rounded-full">
                         <span className="sr-only">Toggle user menu</span>
                         <div className="h-8 w-8 rounded-full bg-slate-200"></div>
@@ -93,8 +145,8 @@ export default async function TenantLayout({
                 </main>
             </div>
 
-            {/* Demo Switcher Widget */}
-            {isDemo && <DemoSwitcher currentRole={currentRole} />}
+            {/* Demo Switcher Widget - Only show if logged in, to switch roles easily */}
+            {isDemo && user && <DemoSwitcher currentRole={currentRole} />}
         </div>
     )
 }

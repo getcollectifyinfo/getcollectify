@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
@@ -27,11 +28,32 @@ export async function createCustomer(prevState: any, formData: FormData) {
     // This implies the user must PROVIDE the company_id in the insert payload that matches their own.
 
     // So we first need to get the user's company_id from their profile.
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { error: 'Oturum açmanız gerekiyor.' }
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+        console.error('Auth Error:', authError)
+        return { error: 'Oturum açmanız gerekiyor. Lütfen sayfayı yenileyip tekrar deneyin.' }
+    }
 
-    const { data: profile } = await supabase.from('profiles').select('company_id').eq('id', user.id).single()
-    if (!profile) return { error: 'Profil bulunamadı.' }
+    // Use Admin Client to bypass RLS recursion issues for profile fetch
+    // Use DIRECT Supabase Client to avoid SSR/Cookie interference with Service Role
+    const adminSupabase = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            }
+        }
+    )
+    
+    const { data: profile, error: profileError } = await adminSupabase.from('profiles').select('company_id').eq('id', user.id).single()
+    
+    if (profileError || !profile) {
+        console.error('Profile Error:', profileError)
+        return { error: 'Profil bulunamadı. Lütfen yönetici ile iletişime geçin.' }
+    }
 
     const { error } = await supabase.from('customers').insert({
         company_id: profile.company_id,

@@ -1,7 +1,10 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { getSiteUrl } from '@/lib/utils'
 
 // Mapping of roles to Seeded User Emails
 const DEMO_USERS = {
@@ -28,6 +31,42 @@ export async function loginAsDemoUser(role: keyof typeof DEMO_USERS) {
         return { success: false, error: error.message }
     }
 
-    revalidatePath('/')
-    return { success: true }
+    // Verify profile exists
+    // Use Admin Client to bypass RLS recursion issues
+    const adminSupabase = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            }
+        }
+    )
+
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+        return { success: false, error: 'Login failed unexpectedly' }
+    }
+
+    const { data: profile, error: profileError } = await adminSupabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single()
+
+    if (profileError || !profile) {
+        await supabase.auth.signOut()
+        return { success: false, error: 'Kullanıcı profili bulunamadı. Lütfen yönetici ile iletişime geçin.' }
+    }
+
+    revalidatePath('/', 'layout')
+    
+    // Force absolute URL redirect to ensure middleware handles it correctly
+    // and to clear potential client-side router cache issues.
+    // This dynamically handles localhost vs production using environment variables.
+    const targetUrl = getSiteUrl('demo', '/')
+    
+    redirect(targetUrl)
 }

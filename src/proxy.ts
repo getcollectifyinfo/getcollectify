@@ -15,11 +15,18 @@ export const config = {
 
 export default async function proxy(req: NextRequest) {
     const url = req.nextUrl
+    const hostHeader = req.headers.get('host')
 
     // Get hostname of request (e.g. demo.getcollectify.com, demo.localhost:3000)
-    const hostname = req.headers
-        .get('host')!
+    const hostname = hostHeader!
         .replace('.localhost:3000', `.${process.env.ROOT_DOMAIN}`)
+
+    console.log('Middleware Debug:', {
+        originalHost: hostHeader,
+        processedHostname: hostname,
+        rootDomain: process.env.ROOT_DOMAIN,
+        path: url.pathname
+    })
 
     // 1. Root Domain / Localhost check
     // If it's the main domain, serve the proper page (marketing or root app)
@@ -39,7 +46,7 @@ export default async function proxy(req: NextRequest) {
     const path = `${url.pathname}${searchParams.length > 0 ? `?${searchParams}` : ''}`
 
     // For localhost subdomains (e.g. foo.localhost:3000)
-    let subdomain = hostname.split('.')[0]
+    const subdomain = hostname.split('.')[0]
 
     // Safety check: if code reaches here with 'localhost:3000' (should be caught above),
     // ensure we don't treat it as a subdomain.
@@ -47,5 +54,13 @@ export default async function proxy(req: NextRequest) {
         return NextResponse.next()
     }
 
-    return NextResponse.rewrite(new URL(`/${subdomain}${path}`, req.url))
+    // Add x-url header so we can read the current path in Server Components (Layout)
+    const requestHeaders = new Headers(req.headers)
+    requestHeaders.set('x-url', url.pathname)
+
+    return NextResponse.rewrite(new URL(`/${subdomain}${path}`, req.url), {
+        request: {
+            headers: requestHeaders,
+        },
+    })
 }

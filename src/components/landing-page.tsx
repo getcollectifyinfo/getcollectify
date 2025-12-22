@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle2, DollarSign, Users, BarChart3, ShieldCheck, ArrowRight, Menu, X, Calendar, FileText } from 'lucide-react'
 import { useState } from 'react'
+import { getSiteUrl } from '@/lib/utils'
 
 type Lang = 'en' | 'tr'
 
@@ -124,8 +125,11 @@ const content: Record<Lang, Content> = {
 }
 
 export default function LandingPage({ lang = 'en' }: { lang?: Lang }) {
-    const t = content[lang]
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const t = content[lang]
+
+    // Use centralized URL helper to ensure consistency between Server Actions and Client Components
+    const demoUrl = getSiteUrl('demo')
 
     return (
         <div className="flex min-h-screen flex-col font-sans text-slate-900 bg-white">
@@ -149,7 +153,7 @@ export default function LandingPage({ lang = 'en' }: { lang?: Lang }) {
                     <div className="hidden md:flex gap-4 items-center">
                         <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-blue-600">{t.nav.login}</Link>
                         <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6" asChild>
-                            <Link href="https://demo.getcollectify.com">
+                            <Link href={demoUrl}>
                                 {t.nav.start}
                             </Link>
                         </Button>
@@ -184,7 +188,7 @@ export default function LandingPage({ lang = 'en' }: { lang?: Lang }) {
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6 rounded-full shadow-lg hover:shadow-xl transition-all" asChild>
-                                    <Link href="https://demo.getcollectify.com">
+                                    <Link href={demoUrl}>
                                         {t.hero.start}
                                     </Link>
                                 </Button>

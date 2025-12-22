@@ -52,7 +52,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ doma
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
                 <h2 className="text-lg font-semibold mb-4">Dashboard İçeriği</h2>
                 <p className="text-muted-foreground">
-                    Dashboard içeriği yakında tasarlanacak. Alacak listesi için "Alacaklar" menüsünü kullanın.
+                    Dashboard içeriği yakında tasarlanacak. Alacak listesi için &quot;Alacaklar&quot; menüsünü kullanın.
                 </p>
             </div>
         </div>
