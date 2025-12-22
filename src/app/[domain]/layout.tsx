@@ -34,28 +34,42 @@ export default async function TenantLayout({
     // Get current user role for demo switcher active state
     let currentRole = 'admin' // default
     if (isDemo && user) {
-        // Use Admin Client to fetch profile safely (bypass RLS recursion)
-        const adminSupabase = createSupabaseClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            {
-                auth: {
-                    autoRefreshToken: false,
-                    persistSession: false
-                }
+        try {
+            // Use Admin Client to fetch profile safely (bypass RLS recursion)
+            // Check if Service Key is available
+            if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+                console.warn('SUPABASE_SERVICE_ROLE_KEY is missing, skipping profile fetch')
+                throw new Error('Missing Service Role Key')
             }
-        )
-        const { data: profile } = await adminSupabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single()
 
-        if (profile) {
-            if (profile.role === 'company_admin') currentRole = 'admin'
-            else currentRole = profile.role
-        } else {
-             // Fallback to email check if profile fails (shouldn't happen with admin client)
+            const adminSupabase = createSupabaseClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.SUPABASE_SERVICE_ROLE_KEY!,
+                {
+                    auth: {
+                        autoRefreshToken: false,
+                        persistSession: false
+                    }
+                }
+            )
+            const { data: profile, error: profileError } = await adminSupabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+
+            if (profileError) {
+                console.error('Error fetching profile:', profileError)
+                throw profileError
+            }
+
+            if (profile) {
+                if (profile.role === 'company_admin') currentRole = 'admin'
+                else currentRole = profile.role
+            } 
+        } catch (error) {
+            console.error('Layout Profile Fetch Error:', error)
+             // Fallback to email check if profile fails
             if (user.email?.includes('admin')) currentRole = 'admin'
             else if (user.email?.includes('accounting')) currentRole = 'accounting'
             else if (user.email?.includes('manager')) currentRole = 'manager'
