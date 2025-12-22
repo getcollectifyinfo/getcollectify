@@ -72,6 +72,13 @@ interface AddReceivableModalProps {
     currencies: string[]
 }
 
+interface CustomerOption {
+    id: string
+    name: string
+    totalDebt: number
+    currency: string
+}
+
 export default function AddReceivableModal({
     open,
     onOpenChange,
@@ -81,7 +88,7 @@ export default function AddReceivableModal({
 }: AddReceivableModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [customerSearch, setCustomerSearch] = useState('')
-    const [customers, setCustomers] = useState<any[]>([])
+    const [customers, setCustomers] = useState<CustomerOption[]>([])
     const [customerOpen, setCustomerOpen] = useState(false)
     const router = useRouter()
 
@@ -99,13 +106,17 @@ export default function AddReceivableModal({
 
     // Search customers as user types
     useEffect(() => {
-        if (customerSearch.length > 1) {
-            searchCustomers(customerSearch, companyId).then(result => {
-                setCustomers(result.customers)
-            })
-        } else {
-            setCustomers([])
-        }
+        const timer = setTimeout(() => {
+            if (customerSearch.length > 1) {
+                searchCustomers(customerSearch, companyId).then(result => {
+                    setCustomers(result.customers)
+                })
+            } else {
+                setCustomers([])
+            }
+        }, 300)
+
+        return () => clearTimeout(timer)
     }, [customerSearch, companyId])
 
     async function onSubmit(values: FormValues) {
@@ -209,7 +220,7 @@ export default function AddReceivableModal({
                                                                 </div>
                                                             </CommandItem>
                                                         ))}
-                                                        {customerSearch && customers.length === 0 && (
+                                                        {customerSearch && !customers.some(c => c.name.toLowerCase() === customerSearch.toLowerCase()) && (
                                                             <CommandItem
                                                                 value={customerSearch}
                                                                 onSelect={() => {
@@ -219,7 +230,7 @@ export default function AddReceivableModal({
                                                                 }}
                                                             >
                                                                 <Check className="mr-2 h-4 w-4 opacity-0" />
-                                                                Yeni müşteri: "{customerSearch}"
+                                                                Yeni müşteri: &quot;{customerSearch}&quot;
                                                             </CommandItem>
                                                         )}
                                                     </CommandGroup>

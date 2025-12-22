@@ -21,7 +21,7 @@ export async function searchCustomers(query: string, companyId: string) {
             .select(`
         id,
         name,
-        debts!inner (
+        debts (
           remaining_amount,
           currency
         )
@@ -37,7 +37,7 @@ export async function searchCustomers(query: string, companyId: string) {
 
         // Calculate total debt for each customer
         const customersWithTotals = customers?.map(customer => {
-            const totalDebt = customer.debts?.reduce((sum: number, debt: any) => {
+            const totalDebt = customer.debts?.reduce((sum: number, debt: { remaining_amount: number }) => {
                 return sum + (debt.remaining_amount || 0)
             }, 0) || 0
 
@@ -45,7 +45,8 @@ export async function searchCustomers(query: string, companyId: string) {
                 id: customer.id,
                 name: customer.name,
                 totalDebt,
-                currency: customer.debts?.[0]?.currency || 'TRY'
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                currency: (customer.debts as any[])?.[0]?.currency || 'TRY'
             }
         }) || []
 
