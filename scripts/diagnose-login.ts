@@ -19,7 +19,7 @@ async function diagnose() {
 
     // 1. Try to login as demo-seller using CLIENT (Anon) Key
     // This simulates the browser/app behavior
-    const client = createClient(supabaseUrl, anonKey!)
+    const client = createClient(supabaseUrl!, anonKey!)
     
     console.log('\n--- 1. Login Attempt (Client) ---')
     const { data: { user }, error: loginError } = await client.auth.signInWithPassword({
@@ -51,10 +51,10 @@ async function diagnose() {
         console.log('✅ Profile found (Client):', profile)
     }
 
-    // 3. Verify data exists using ADMIN connection
+    // 3. Verify Data Existence (Admin)
     // This tests if data actually exists in DB
     console.log('\n--- 3. Verify Data Existence (Admin) ---')
-    const admin = createClient(supabaseUrl, serviceRoleKey!)
+    const admin = createClient(supabaseUrl!, serviceRoleKey!)
     
     const { data: adminProfile, error: adminError } = await admin
         .from('profiles')

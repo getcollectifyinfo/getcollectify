@@ -57,7 +57,7 @@ const formSchema = z.object({
     customerName: z.string().min(1, 'Müşteri adı zorunludur'),
     amount: z.number().min(0.01, 'Tutar 0\'dan büyük olmalıdır'),
     currency: z.string().min(1, 'Para birimi seçilmeli'),
-    dueDate: z.date({ required_error: 'Vade tarihi zorunludur' }),
+    dueDate: z.date({ message: 'Vade tarihi zorunludur' }),
     debtType: z.string().min(1, 'Borç tipi seçilmeli'),
     notes: z.string().optional(),
 })
