@@ -13,7 +13,7 @@ export const config = {
     ],
 }
 
-export default async function proxy(req: NextRequest) {
+export default async function middleware(req: NextRequest) {
     const url = req.nextUrl
     const hostHeader = req.headers.get('host')
 
