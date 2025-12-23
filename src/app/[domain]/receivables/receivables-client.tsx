@@ -246,11 +246,7 @@ export function ReceivablesClient({ debts, companyId, debtTypes, currencies, use
         <>
             <div className="grid gap-4 md:grid-cols-1">
                 <Card className="col-span-1">
-                    <CardHeader className="flex flex-col space-y-4 pb-4">
-                        <div className="flex flex-row items-center justify-between space-y-0">
-                            <CardTitle>Alacak Listesi & İşlem Takvimi</CardTitle>
-                        </div>
-                    </CardHeader>
+
                     <CardContent className="space-y-4">
                         {/* Filters */}
                         <div className="w-full flex flex-col md:flex-row gap-4 items-center justify-between bg-muted/20 p-4 rounded-lg border">
