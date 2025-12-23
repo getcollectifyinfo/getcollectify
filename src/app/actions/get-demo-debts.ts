@@ -30,6 +30,9 @@ export async function getDemoDebts(userId?: string, role?: string) {
         name,
         company_id,
         assigned_user_id,
+        profiles:assigned_user_id (
+            name
+        ),
         notes (count),
         promises (count)
       ),
