@@ -104,7 +104,7 @@ export default function CustomerTimeline({ notes, promises }: CustomerTimelinePr
                                         {format(new Date(entry.created_at), 'dd MMM yyyy, HH:mm', { locale: tr })}
                                     </span>
                                     {entry.data.profiles?.name && (
-                                        <span>Görüşen: {entry.data.profiles.name}</span>
+                                        <span>{entry.data.profiles.name}</span>
                                     )}
                                 </div>
 
