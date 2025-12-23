@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ChevronDown, ChevronRight, MessageSquareText, Edit, Trash2, CalendarCheck, UploadCloud, Search, Filter } from 'lucide-react'
+import { ChevronDown, ChevronRight, MessageSquareText, Edit, Trash2, CalendarCheck, UploadCloud, Search, Filter, ArrowUpDown } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Plus } from 'lucide-react'
 import AddNoteModal from '@/components/add-note-modal'
@@ -109,7 +109,19 @@ export function ReceivablesClient({ debts, companyId, debtTypes, currencies, use
     const [loadingTimeline, setLoadingTimeline] = useState<Set<string>>(new Set())
     const [searchQuery, setSearchQuery] = useState('')
     const [statusFilter, setStatusFilter] = useState<'all' | 'current' | 'overdue' | 'no-activity'>('all')
+    const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null)
     const router = useRouter()
+
+    const handleSort = (key: string) => {
+        setSortConfig(current => {
+            if (current?.key === key) {
+                return current.direction === 'asc' 
+                    ? { key, direction: 'desc' } 
+                    : null
+            }
+            return { key, direction: 'asc' }
+        })
+    }
 
     const groupedDebts = useMemo(() => {
         // First filter debts based on status
@@ -174,8 +186,34 @@ export function ReceivablesClient({ debts, companyId, debtTypes, currencies, use
             )
         }
 
+        if (sortConfig) {
+            result.sort((a, b) => {
+                let comparison = 0
+                
+                switch (sortConfig.key) {
+                    case 'customer':
+                        comparison = a.customerName.localeCompare(b.customerName, 'tr')
+                        break
+                    case 'salesRep':
+                        comparison = a.salesRepName.localeCompare(b.salesRepName, 'tr')
+                        break
+                    case 'status':
+                        comparison = a.maxDelay - b.maxDelay
+                        break
+                    case 'amount':
+                        // Simple sum for sorting purposes
+                        const sumA = Object.values(a.totals).reduce((acc, curr) => acc + curr, 0)
+                        const sumB = Object.values(b.totals).reduce((acc, curr) => acc + curr, 0)
+                        comparison = sumA - sumB
+                        break
+                }
+
+                return sortConfig.direction === 'asc' ? comparison : -comparison
+            })
+        }
+
         return result
-    }, [debts, statusFilter, searchQuery])
+    }, [debts, statusFilter, searchQuery, sortConfig])
 
     function openNoteModal(debt: Debt) {
         setSelectedDebt(debt)
@@ -324,10 +362,48 @@ export function ReceivablesClient({ debts, companyId, debtTypes, currencies, use
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Müşteri</TableHead>
-                                    <TableHead>Satış Temsilcisi</TableHead>
-                                    <TableHead>Durum</TableHead>
-                                    <TableHead className="text-right">Toplam Tutar</TableHead>
+                                    <TableHead>
+                                        <Button 
+                                            variant="ghost" 
+                                            onClick={() => handleSort('customer')}
+                                            className="hover:bg-transparent px-0 font-semibold"
+                                        >
+                                            Müşteri
+                                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead>
+                                        <Button 
+                                            variant="ghost" 
+                                            onClick={() => handleSort('salesRep')}
+                                            className="hover:bg-transparent px-0 font-semibold"
+                                        >
+                                            Satış Temsilcisi
+                                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead>
+                                        <Button 
+                                            variant="ghost" 
+                                            onClick={() => handleSort('status')}
+                                            className="hover:bg-transparent px-0 font-semibold"
+                                        >
+                                            Durum
+                                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead className="text-right">
+                                        <div className="flex justify-end">
+                                            <Button 
+                                                variant="ghost" 
+                                                onClick={() => handleSort('amount')}
+                                                className="hover:bg-transparent px-0 font-semibold"
+                                            >
+                                                Toplam Tutar
+                                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
