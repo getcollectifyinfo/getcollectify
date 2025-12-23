@@ -108,7 +108,7 @@ export function ReceivablesClient({ debts, companyId, debtTypes, currencies, use
     const [timelineData, setTimelineData] = useState<Record<string, TimelineData>>({})
     const [loadingTimeline, setLoadingTimeline] = useState<Set<string>>(new Set())
     const [searchQuery, setSearchQuery] = useState('')
-    const [statusFilter, setStatusFilter] = useState<'all' | 'current' | 'overdue'>('all')
+    const [statusFilter, setStatusFilter] = useState<'all' | 'current' | 'overdue' | 'no-activity'>('all')
     const router = useRouter()
 
     const groupedDebts = useMemo(() => {
@@ -117,6 +117,7 @@ export function ReceivablesClient({ debts, companyId, debtTypes, currencies, use
             if (statusFilter === 'all') return true
             if (statusFilter === 'overdue') return debt.isOverdue
             if (statusFilter === 'current') return !debt.isOverdue
+            if (statusFilter === 'no-activity') return debt.isOverdue && !debt.hasActivity
             return true
         })
 
@@ -308,6 +309,14 @@ export function ReceivablesClient({ debts, companyId, debtTypes, currencies, use
                                         onClick={() => setStatusFilter('overdue')}
                                     >
                                         Geçmiş
+                                    </Button>
+                                    <Button
+                                        variant={statusFilter === 'no-activity' ? 'secondary' : 'ghost'}
+                                        size="sm"
+                                        className={`text-sm ${statusFilter === 'no-activity' ? 'bg-background shadow-sm text-orange-600' : ''}`}
+                                        onClick={() => setStatusFilter('no-activity')}
+                                    >
+                                        Not Eklenmeyenler
                                     </Button>
                                 </div>
                                 <Button variant="outline" size="icon" className="shrink-0" title="Filtrele">
