@@ -1,8 +1,5 @@
 
 import { createClient } from '@/lib/supabase/server'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { Plus } from 'lucide-react'
 import CustomersClient from './customers-client'
 
 export default async function CustomersPage({
@@ -62,6 +59,19 @@ export default async function CustomersPage({
                     *,
                     profiles:assigned_user_id (
                         name
+                    ),
+                    debts (
+                        id,
+                        remaining_amount,
+                        due_date,
+                        currency
+                    ),
+                    notes (
+                        created_at
+                    ),
+                    promises (
+                        created_at,
+                        promise_date
                     )
                 `)
                 .eq('company_id', demoCompany.id)
@@ -96,6 +106,19 @@ export default async function CustomersPage({
                 *,
                 profiles:assigned_user_id (
                     name
+                ),
+                debts (
+                    id,
+                    remaining_amount,
+                    due_date,
+                    currency
+                ),
+                notes (
+                    created_at
+                ),
+                promises (
+                    created_at,
+                    promise_date
                 )
             `)
             .eq('archived', false)
@@ -120,19 +143,6 @@ export default async function CustomersPage({
     }
 
     return (
-        <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-lg font-bold md:text-2xl">Müşteriler</h1>
-                {canAddCustomer && (
-                    <Button asChild>
-                        <Link href={`/customers/new`}>
-                            <Plus className="mr-2 h-4 w-4" /> Yeni Müşteri
-                        </Link>
-                    </Button>
-                )}
-            </div>
-
-            <CustomersClient customers={customers} currentUserRole={currentUserRole} />
-        </div>
+        <CustomersClient customers={customers} currentUserRole={currentUserRole} />
     )
 }
