@@ -7,25 +7,31 @@ import { Phone, Calendar } from 'lucide-react'
 interface Note {
     id: string
     created_at: string
-    contact_person?: string
-    phone?: string
-    text?: string
-    promised_date?: string
+    contact_person?: string | null
+    phone?: string | null
+    text?: string | null
+    promised_date?: string | null
     profiles?: {
         name: string
-    }
+    } | null
+    debts?: {
+        debt_type: string
+        due_date: string
+        remaining_amount: number
+        currency: string
+    } | null
 }
 
 interface Promise {
     id: string
     created_at: string
     promised_date: string
-    amount?: number
+    amount?: number | null
     currency: string
     status: string
     profiles?: {
         name: string
-    }
+    } | null
 }
 
 interface TimelineEntry {
@@ -101,6 +107,14 @@ export default function CustomerTimeline({ notes, promises }: CustomerTimelinePr
                                         <span>Görüşen: {entry.data.profiles.name}</span>
                                     )}
                                 </div>
+
+                                {/* Debt context badge */}
+                                {entry.type === 'note' && (entry.data as Note).debts && (
+                                    <div className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 w-fit">
+                                        {(entry.data as Note).debts?.debt_type} - {format(new Date((entry.data as Note).debts!.due_date), 'dd MMM yyyy', { locale: tr })}
+                                    </div>
+                                )}
+
 
                                 {/* Note content */}
                                 {entry.type === 'note' && (

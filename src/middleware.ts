@@ -9,6 +9,12 @@ export default function middleware(req: NextRequest) {
   const host = req.headers.get("host") || "";
   const rootDomain = process.env.ROOT_DOMAIN || "getcollectify.com";
 
+  console.log("MW Debug:", {
+    host,
+    rootDomain,
+    pathname: url.pathname
+  });
+
   // Check if we are on the root domain (Landing Page)
   // 1. Exact match (e.g. "getcollectify.com" or "localhost:3000")
   // 2. www subdomain (e.g. "www.getcollectify.com")
@@ -16,9 +22,12 @@ export default function middleware(req: NextRequest) {
   const isRoot = 
     host === rootDomain || 
     host === `www.${rootDomain}` || 
-    host.endsWith(".vercel.app");
+    host.endsWith(".vercel.app") ||
+    // Extra safety for localhost variants if port is missing or different
+    (host.includes("localhost") && !host.startsWith("demo.") && !host.startsWith("app."));
 
   if (isRoot) {
+    console.log("MW: Matched Root Domain -> Skipping Rewrite");
     return NextResponse.next();
   }
 

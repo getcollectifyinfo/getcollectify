@@ -10,7 +10,7 @@ const customerSchema = z.object({
     phone: z.string().optional(),
 })
 
-export async function createCustomer(prevState: any, formData: FormData) {
+export async function createCustomer(prevState: unknown, formData: FormData) {
     const validated = customerSchema.safeParse({
         name: formData.get('name'),
         phone: formData.get('phone'),

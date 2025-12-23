@@ -11,10 +11,12 @@ const DEMO_USERS = {
     admin: 'demo-admin@collectify.com',
     accounting: 'demo-accounting@collectify.com',
     manager: 'demo-manager@collectify.com',
+    manager2: 'demo-manager-2@collectify.com',
     seller: 'demo-seller@collectify.com',
+    seller2: 'demo-seller-2@collectify.com',
 }
 
-export async function loginAsDemoUser(role: keyof typeof DEMO_USERS) {
+export async function loginAsDemoUser(role: keyof typeof DEMO_USERS, returnPath: string = '/') {
     const email = DEMO_USERS[role]
     if (!email) return { success: false, error: 'Invalid role' }
 
@@ -66,7 +68,7 @@ export async function loginAsDemoUser(role: keyof typeof DEMO_USERS) {
     // Force absolute URL redirect to ensure middleware handles it correctly
     // and to clear potential client-side router cache issues.
     // This dynamically handles localhost vs production using environment variables.
-    const targetUrl = getSiteUrl('demo', '/')
+    const targetUrl = getSiteUrl('demo', returnPath || '/')
     
     redirect(targetUrl)
 }

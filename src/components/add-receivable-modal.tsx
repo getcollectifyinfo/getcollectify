@@ -60,9 +60,16 @@ const formSchema = z.object({
     dueDate: z.date({ message: 'Vade tarihi zorunludur' }),
     debtType: z.string().min(1, 'Borç tipi seçilmeli'),
     notes: z.string().optional(),
+    assignedUserId: z.string().optional(),
 })
 
 type FormValues = z.infer<typeof formSchema>
+
+interface User {
+    id: string
+    name: string
+    role: string
+}
 
 interface AddReceivableModalProps {
     open: boolean
@@ -70,6 +77,7 @@ interface AddReceivableModalProps {
     companyId: string
     debtTypes: string[]
     currencies: string[]
+    users: User[]
 }
 
 interface CustomerOption {
@@ -77,6 +85,7 @@ interface CustomerOption {
     name: string
     totalDebt: number
     currency: string
+    assigned_user_id?: string
 }
 
 export default function AddReceivableModal({
@@ -85,6 +94,7 @@ export default function AddReceivableModal({
     companyId,
     debtTypes,
     currencies,
+    users,
 }: AddReceivableModalProps) {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [customerSearch, setCustomerSearch] = useState('')
@@ -101,6 +111,7 @@ export default function AddReceivableModal({
             currency: currencies[0] || 'TRY',
             debtType: debtTypes[0] || 'Cari',
             notes: '',
+            assignedUserId: '',
         },
     })
 
@@ -125,6 +136,7 @@ export default function AddReceivableModal({
             const result = await createReceivable({
                 ...values,
                 companyId,
+                assignedUserId: values.assignedUserId,
             })
 
             if (result.success) {
@@ -135,7 +147,7 @@ export default function AddReceivableModal({
             } else {
                 toast.error(result.error || 'Alacak eklenirken hata oluştu')
             }
-        } catch (error) {
+        } catch {
             toast.error('Beklenmeyen bir hata oluştu')
         } finally {
             setIsSubmitting(false)
@@ -178,7 +190,7 @@ export default function AddReceivableModal({
                                             </FormControl>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-full p-0">
-                                            <Command>
+                                            <Command shouldFilter={false}>
                                                 <CommandInput
                                                     placeholder="Müşteri ara..."
                                                     value={customerSearch}
@@ -238,6 +250,36 @@ export default function AddReceivableModal({
                                             </Command>
                                         </PopoverContent>
                                     </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        {/* Sales Rep */}
+                        <FormField
+                            control={form.control}
+                            name="assignedUserId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Satış Temsilcisi</FormLabel>
+                                    <Select 
+                                        onValueChange={field.onChange} 
+                                        defaultValue={field.value}
+                                        value={field.value}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Satış temsilcisi seçin" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {users.map((user) => (
+                                                <SelectItem key={user.id} value={user.id}>
+                                                    {user.name} ({user.role === 'manager' ? 'Yönetici' : 'Temsilci'})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}

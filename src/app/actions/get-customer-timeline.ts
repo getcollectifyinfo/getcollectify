@@ -26,8 +26,15 @@ export async function getCustomerTimeline(customerId: string) {
         text,
         promised_date,
         created_by_user_id,
+        debt_id,
         profiles:created_by_user_id (
           name
+        ),
+        debts:debt_id (
+          debt_type,
+          due_date,
+          remaining_amount,
+          currency
         )
       `)
             .eq('customer_id', customerId)
@@ -48,6 +55,7 @@ export async function getCustomerTimeline(customerId: string) {
         currency,
         status,
         created_by_user_id,
+        debt_id,
         profiles:created_by_user_id (
           name
         )

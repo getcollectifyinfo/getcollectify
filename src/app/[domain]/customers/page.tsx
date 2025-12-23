@@ -1,16 +1,9 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
+import CustomersClient from './customers-client'
 
 export default async function CustomersPage({
     params,
@@ -19,7 +12,27 @@ export default async function CustomersPage({
 }) {
     const { domain } = await params
 
-    let customers = null
+    // Get current user role
+    const supabaseUser = await createClient()
+    const { data: { user } } = await supabaseUser.auth.getUser()
+    
+    let currentUserRole = ''
+    const currentUserId = user?.id
+
+    if (user) {
+        // Use service client or user client? User client is fine for profile reading usually.
+        // But to be safe and consistent with previous pages:
+        const { data: currentProfile } = await supabaseUser
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+        currentUserRole = currentProfile?.role || ''
+    }
+
+    const canAddCustomer = ['company_admin', 'accounting'].includes(currentUserRole)
+
+    let customers = []
 
     // For demo subdomain, use service role to bypass RLS
     if (domain.startsWith('demo')) {
@@ -43,71 +56,83 @@ export default async function CustomersPage({
             .single()
 
         if (demoCompany) {
-            const { data } = await supabase
+            let query = supabase
                 .from('customers')
-                .select('*')
+                .select(`
+                    *,
+                    profiles:assigned_user_id (
+                        name
+                    )
+                `)
                 .eq('company_id', demoCompany.id)
                 .eq('archived', false)
                 .order('name')
-            customers = data
+
+            if (currentUserId && currentUserRole) {
+                if (currentUserRole === 'seller') {
+                    query = query.eq('assigned_user_id', currentUserId)
+                } else if (currentUserRole === 'manager') {
+                    const { data: teamMembers } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('manager_id', currentUserId)
+                    
+                    const teamIds = teamMembers?.map(m => m.id) || []
+                    const allowedUserIds = [currentUserId, ...teamIds]
+                    
+                    query = query.in('assigned_user_id', allowedUserIds)
+                }
+            }
+
+            const { data } = await query
+            customers = data || []
         }
     } else {
         // For non-demo, use regular RLS-protected query
         const supabase = await createClient()
-        const { data } = await supabase
+        let query = supabase
             .from('customers')
-            .select('*')
+            .select(`
+                *,
+                profiles:assigned_user_id (
+                    name
+                )
+            `)
             .eq('archived', false)
             .order('name')
-        customers = data
+        
+        if (currentUserRole === 'seller') {
+            query = query.eq('assigned_user_id', currentUserId)
+        } else if (currentUserRole === 'manager') {
+             const { data: teamMembers } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('manager_id', currentUserId)
+            
+            const teamIds = teamMembers?.map(m => m.id) || []
+            const allowedUserIds = [currentUserId, ...teamIds]
+            
+            query = query.in('assigned_user_id', allowedUserIds)
+        }
+
+        const { data } = await query
+        customers = data || []
     }
 
     return (
         <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-lg font-bold md:text-2xl">Müşteriler</h1>
-                <Button asChild>
-                    <Link href={`/customers/new`}>
-                        <Plus className="mr-2 h-4 w-4" /> Yeni Müşteri
-                    </Link>
-                </Button>
+                {canAddCustomer && (
+                    <Button asChild>
+                        <Link href={`/customers/new`}>
+                            <Plus className="mr-2 h-4 w-4" /> Yeni Müşteri
+                        </Link>
+                    </Button>
+                )}
             </div>
 
-            <div className="rounded-md border bg-card">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>İsim</TableHead>
-                            <TableHead>Telefon</TableHead>
-                            <TableHead>Oluşturulma</TableHead>
-                            <TableHead className="text-right">Bakiye</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {customers?.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">
-                                    Henüz müşteri bulunmuyor.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            customers?.map((customer: any) => (
-                                <TableRow key={customer.id}>
-                                    <TableCell className="font-medium">
-                                        <Link href={`/customers/${customer.id}`} className="hover:underline">
-                                            {customer.name}
-                                        </Link>
-                                    </TableCell>
-                                    <TableCell>{customer.phone || '-'}</TableCell>
-                                    <TableCell>{new Date(customer.created_at).toLocaleDateString('tr-TR')}</TableCell>
-                                    {/* Bakiye would need a join or separate fetch for total debt */}
-                                    <TableCell className="text-right">₺0.00</TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <CustomersClient customers={customers} currentUserRole={currentUserRole} />
         </div>
     )
 }

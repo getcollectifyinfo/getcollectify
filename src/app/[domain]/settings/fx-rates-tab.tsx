@@ -15,7 +15,15 @@ const initialState = {
     success: false
 }
 
-export default function FxRatesTab({ fxRates }: { fxRates: any[] }) {
+type FxRate = {
+    id: string
+    date: string
+    base_currency: string
+    quote_currency: string
+    rate: number
+}
+
+export default function FxRatesTab({ fxRates }: { fxRates: FxRate[] }) {
     const [state, formAction, isPending] = useActionState(addFxRate, initialState)
 
     return (

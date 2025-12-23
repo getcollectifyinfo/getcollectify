@@ -14,7 +14,15 @@ const initialState = {
     success: false
 }
 
-export default function GeneralSettingsTab({ company }: { company: any }) {
+interface CompanyInfo {
+    id: string
+    name: string
+    base_currency: string
+    timezone: string
+    logo_url?: string | null
+}
+
+export default function GeneralSettingsTab({ company }: { company: CompanyInfo }) {
     const [state, formAction, isPending] = useActionState(updateCompanySettings, initialState)
 
     return (

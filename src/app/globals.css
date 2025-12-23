@@ -48,16 +48,16 @@
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
 
-  --primary: 222.2 47.4% 11.2%;
+  --primary: 220 30% 22%;
   --primary-foreground: 210 40% 98%;
 
   --secondary: 210 40% 96.1%;
   --secondary-foreground: 222.2 47.4% 11.2%;
 
-  --muted: 210 40% 96.1%;
+  --muted: 210 25% 98%;
   --muted-foreground: 215.4 16.3% 46.9%;
 
-  --accent: 210 40% 96.1%;
+  --accent: 220 20% 93%;
   --accent-foreground: 222.2 47.4% 11.2%;
 
   --destructive: 0 84.2% 60.2%;
@@ -67,7 +67,7 @@
   --input: 214.3 31.8% 91.4%;
   --ring: 222.2 84% 4.9%;
 
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 }
 
 .dark {
@@ -106,4 +106,19 @@
 
 body {
   @apply bg-background text-foreground;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+}
+
+@layer base {
+  .metric-card {
+    @apply bg-white rounded-xl border border-border p-6 transition-all hover:shadow-md;
+  }
+  .table-row-hover {
+    @apply hover:bg-muted/50 transition-colors cursor-pointer;
+  }
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full;
+  }
 }

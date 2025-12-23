@@ -9,11 +9,13 @@ import { X, Plus } from 'lucide-react'
 import { updateCompanySettings } from '@/app/actions/update-company-settings'
 import { toast } from 'sonner'
 
-interface ConfigTabProps {
-    company: any
+interface CompanyConfig {
+    id: string
+    debt_types?: string[]
+    currencies?: string[]
 }
 
-export default function ConfigTab({ company }: ConfigTabProps) {
+export default function ConfigTab({ company }: { company: CompanyConfig }) {
     const [debtTypes, setDebtTypes] = useState<string[]>(company?.debt_types || ['Cari', 'Çek', 'Senet'])
     const [currencies, setCurrencies] = useState<string[]>(company?.currencies || ['TRY', 'USD', 'EUR'])
     const [newDebtType, setNewDebtType] = useState('')

@@ -72,6 +72,8 @@ export default async function TenantLayout({
 
             if (profile) {
                 if (profile.role === 'company_admin') currentRole = 'admin'
+                else if (profile.role === 'manager' && user.email === 'demo-manager-2@collectify.com') currentRole = 'manager2'
+                else if (profile.role === 'seller' && user.email === 'demo-seller-2@collectify.com') currentRole = 'seller2'
                 else currentRole = profile.role
             } 
         } catch (error) {
@@ -79,7 +81,9 @@ export default async function TenantLayout({
              // Fallback to email check if profile fails
             if (user.email?.includes('admin')) currentRole = 'admin'
             else if (user.email?.includes('accounting')) currentRole = 'accounting'
+            else if (user.email?.includes('manager-2')) currentRole = 'manager2'
             else if (user.email?.includes('manager')) currentRole = 'manager'
+            else if (user.email?.includes('seller-2')) currentRole = 'seller2'
             else if (user.email?.includes('seller')) currentRole = 'seller'
         }
     }
@@ -117,6 +121,12 @@ export default async function TenantLayout({
                             className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
                         >
                             Müşteriler
+                        </Link>
+                        <Link
+                            href="/users"
+                            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                        >
+                            Kullanıcılar
                         </Link>
                         <Link
                             href="/calendar"
@@ -173,7 +183,7 @@ export default async function TenantLayout({
             </div>
 
             {/* Demo Switcher Widget - Only show if logged in, to switch roles easily */}
-            {isDemo && user && <DemoSwitcher currentRole={currentRole} />}
+            {isDemo && user && <DemoSwitcher key={currentRole} currentRole={currentRole} />}
         </div>
     )
 }

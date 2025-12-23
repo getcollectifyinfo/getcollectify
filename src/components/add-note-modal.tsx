@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -24,7 +24,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { tr } from 'date-fns/locale'
 import { cn } from '@/lib/utils'
@@ -35,9 +35,15 @@ import { toast } from 'sonner'
 const formSchema = z.object({
     contactPerson: z.string().optional(),
     phone: z.string().optional(),
-    noteText: z.string().min(1, 'Not metni zorunludur'),
+    noteText: z.string().optional(),
     promiseDate: z.date().optional(),
     promiseAmount: z.number().optional(),
+}).refine((data) => {
+    // Either noteText OR promiseDate must be present
+    return (data.noteText && data.noteText.length > 0) || data.promiseDate !== undefined
+}, {
+    message: "Not metni veya ödeme sözü tarihi girilmelidir",
+    path: ["noteText"], // Show error on noteText field
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -149,7 +155,7 @@ export default function AddNoteModal({
                             name="noteText"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Not *</FormLabel>
+                                    <FormLabel>Not {form.watch('promiseDate') ? '(Opsiyonel)' : '*'}</FormLabel>
                                     <FormControl>
                                         <Textarea
                                             placeholder="Görüşme detaylarını yazın..."
@@ -208,15 +214,32 @@ export default function AddNoteModal({
                                 name="promiseAmount"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Söz Verilen Tutar ({currency})</FormLabel>
+                                        <FormLabel>Söz Verilen Tutar ({currency}) (Opsiyonel)</FormLabel>
                                         <FormControl>
-                                            <Input
-                                                type="number"
-                                                step="0.01"
-                                                placeholder="Tutar"
-                                                {...field}
-                                                onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                                            />
+                                            <div className="relative">
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    placeholder="Tutar"
+                                                    {...field}
+                                                    value={field.value ?? ''}
+                                                    onChange={(e) => {
+                                                        const value = e.target.value;
+                                                        field.onChange(value === '' ? undefined : parseFloat(value));
+                                                    }}
+                                                />
+                                                {field.value !== undefined && field.value !== null && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="absolute right-0 top-0 h-full w-9 hover:bg-transparent"
+                                                        onClick={() => field.onChange(undefined)}
+                                                    >
+                                                        <X className="h-4 w-4 text-muted-foreground" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

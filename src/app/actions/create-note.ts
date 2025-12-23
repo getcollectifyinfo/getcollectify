@@ -1,5 +1,6 @@
 'use server'
 
+import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 
@@ -8,7 +9,7 @@ interface CreateNoteInput {
     debtId?: string
     contactPerson?: string
     phone?: string
-    noteText: string
+    noteText?: string
     promiseDate?: Date
     promiseAmount?: number
     currency?: string
@@ -16,8 +17,16 @@ interface CreateNoteInput {
 
 export async function createNote(input: CreateNoteInput) {
     try {
-        // Use service role for demo to bypass RLS issues
-        const supabase = createServiceClient(
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            return { success: false, error: 'Oturum açmanız gerekiyor' }
+        }
+
+        // Use service client for database operations to bypass RLS if needed,
+        // but we should validate permissions first.
+        const serviceClient = createServiceClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!,
             {
@@ -28,10 +37,21 @@ export async function createNote(input: CreateNoteInput) {
             }
         )
 
-        // Get company_id from customer
-        const { data: customer } = await supabase
+        // Get user profile to check role
+        const { data: profile } = await serviceClient
+            .from('profiles')
+            .select('role, id, manager_id')
+            .eq('id', user.id)
+            .single()
+
+        if (!profile) {
+            return { success: false, error: 'Kullanıcı profili bulunamadı' }
+        }
+
+        // Get customer to check ownership
+        const { data: customer } = await serviceClient
             .from('customers')
-            .select('company_id')
+            .select('company_id, assigned_user_id')
             .eq('id', input.customerId)
             .single()
 
@@ -39,36 +59,58 @@ export async function createNote(input: CreateNoteInput) {
             return { success: false, error: 'Müşteri bulunamadı' }
         }
 
-        // Get current user ID from session (for demo, use demo user)
-        // In production, this would come from the authenticated session
-        const { data: demoUser } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('email', 'demo-seller@collectify.com')
-            .single()
+        // Permission Check
+        if (['company_admin', 'accounting'].includes(profile.role)) {
+            // Admin and Accounting can add notes to any customer
+        } else if (profile.role === 'manager') {
+            // Manager can add notes to own or team's customers
+            if (customer.assigned_user_id !== user.id) {
+                // Check if assigned user is in manager's team
+                const { data: teamMember } = await serviceClient
+                    .from('profiles')
+                    .select('id')
+                    .eq('id', customer.assigned_user_id)
+                    .eq('manager_id', user.id)
+                    .single()
+                
+                if (!teamMember) {
+                     return { success: false, error: 'Sadece kendinize veya ekibinize ait müşterilere not ekleyebilirsiniz.' }
+                }
+            }
+        } else if (profile.role === 'seller') {
+            // Seller can only add notes to own customers
+            if (customer.assigned_user_id !== user.id) {
+                return { success: false, error: 'Sadece kendinize ait müşterilere not ekleyebilirsiniz.' }
+            }
+        } else {
+             return { success: false, error: 'Yetkisiz işlem' }
+        }
 
-        const createdByUserId = demoUser?.id
+        const createdByUserId = user.id
 
-        // Create note
-        const { error: noteError } = await supabase
-            .from('notes')
-            .insert({
-                company_id: customer.company_id,
-                customer_id: input.customerId,
-                contact_person: input.contactPerson,
-                phone: input.phone,
-                text: input.noteText,
-                created_by_user_id: createdByUserId,
-            })
+        // Create note if text or contact info is provided
+        if (input.noteText || input.contactPerson || input.phone) {
+            const { error: noteError } = await serviceClient
+                .from('notes')
+                .insert({
+                    company_id: customer.company_id,
+                    customer_id: input.customerId,
+                    debt_id: input.debtId,
+                    contact_person: input.contactPerson,
+                    phone: input.phone,
+                    text: input.noteText || null,
+                    created_by_user_id: createdByUserId,
+                })
 
-        if (noteError) {
-            console.error('Note creation error:', noteError)
-            return { success: false, error: 'Not kaydedilemedi: ' + noteError.message }
+            if (noteError) {
+                console.error('Note creation error:', noteError)
+                return { success: false, error: 'Not kaydedilemedi: ' + noteError.message }
+            }
         }
 
         // Create promise if date provided
         if (input.promiseDate) {
-            const { error: promiseError } = await supabase
+            const { error: promiseError } = await serviceClient
                 .from('promises')
                 .insert({
                     company_id: customer.company_id,

@@ -13,17 +13,31 @@ import Link from 'next/link'
 const ROLES = [
     {
         id: 'seller',
-        title: 'Satış Temsilcisi',
+        title: 'Satış Temsilcisi-01',
         icon: ShoppingBag,
         email: 'demo-seller@collectify.com',
         description: 'Müşteri ve satış yönetimi'
     },
     {
+        id: 'seller2',
+        title: 'Satış Temsilcisi-02',
+        icon: ShoppingBag,
+        email: 'demo-seller-2@collectify.com',
+        description: 'Müşteri ve satış yönetimi (2)'
+    },
+    {
         id: 'manager',
-        title: 'Müdür',
+        title: 'Satış Yöneticisi-01',
         icon: Briefcase,
         email: 'demo-manager@collectify.com',
         description: 'Ekip ve raporlama'
+    },
+    {
+        id: 'manager2',
+        title: 'Satış Yöneticisi-02',
+        icon: Briefcase,
+        email: 'demo-manager-2@collectify.com',
+        description: 'Ekip ve raporlama (2)'
     },
     {
         id: 'accounting',
@@ -42,7 +56,7 @@ const ROLES = [
 ] as const
 
 export default function DemoLogin() {
-    const [selectedRole, setSelectedRole] = useState<typeof ROLES[number]['id']>('seller')
+    const [selectedRole, setSelectedRole] = useState<(typeof ROLES)[number]['id']>('seller')
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -56,7 +70,7 @@ export default function DemoLogin() {
             if (!result.success) {
                 setError(result.error || 'Giriş yapılamadı')
             }
-        } catch (e) {
+        } catch {
             setError('Bir hata oluştu')
         } finally {
             setIsLoading(false)

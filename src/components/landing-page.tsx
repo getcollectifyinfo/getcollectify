@@ -264,7 +264,7 @@ export default function LandingPage({ lang = 'en' }: { lang?: Lang }) {
                         </div>
                         <div className="grid md:grid-cols-3 gap-8">
                             {t.solution.items.map((item, i) => (
-                                <Card key={i} className="border-none shadow-lg bg-gradient-to-br from-white to-slate-50">
+                                <Card key={i} className="border-none shadow-lg bg-linear-to-br from-white to-slate-50">
                                     <CardHeader>
                                         <div className="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 mb-4">
                                             {i === 0 ? <Users /> : i === 1 ? <BarChart3 /> : <ShieldCheck />}

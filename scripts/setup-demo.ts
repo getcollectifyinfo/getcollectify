@@ -1,9 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
-import dotenv from 'dotenv'
-import fs from 'fs'
-import path from 'path'
+import * as dotenv from 'dotenv'
 
-// Load environment variables from .env.local
 dotenv.config({ path: '.env.local' })
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -17,10 +14,12 @@ if (!supabaseUrl || !serviceRoleKey) {
 const supabase = createClient(supabaseUrl, serviceRoleKey)
 
 const DEMO_USERS = [
-    { email: 'demo-admin@collectify.com', password: 'demo1234', role: 'admin' },
-    { email: 'demo-manager@collectify.com', password: 'demo1234', role: 'manager' },
-    { email: 'demo-seller@collectify.com', password: 'demo1234', role: 'seller' },
-    { email: 'demo-accounting@collectify.com', password: 'demo1234', role: 'accounting' },
+    { email: 'demo-admin@collectify.com', password: 'demo1234', role: 'admin', name: 'Yönetici (Admin)' },
+    { email: 'demo-manager@collectify.com', password: 'demo1234', role: 'manager', name: 'Satış Yöneticisi-01' },
+    { email: 'demo-manager-2@collectify.com', password: 'demo1234', role: 'manager', name: 'Satış Yöneticisi-02' },
+    { email: 'demo-seller@collectify.com', password: 'demo1234', role: 'seller', name: 'Satış Temsilcisi-01' },
+    { email: 'demo-seller-2@collectify.com', password: 'demo1234', role: 'seller', name: 'Satış Temsilcisi-02' },
+    { email: 'demo-accounting@collectify.com', password: 'demo1234', role: 'accounting', name: 'Muhasebe' },
 ]
 
 async function main() {
@@ -97,7 +96,7 @@ async function main() {
                     email: demoUser.email,
                     role: dbRole,
                     company_id: companyId,
-                    name: demoUser.role.toUpperCase() + ' USER'
+                    name: demoUser.name || demoUser.role.toUpperCase() + ' USER'
                 })
 
             if (profileError) console.error(`Failed to create profile for ${demoUser.email}:`, profileError.message)

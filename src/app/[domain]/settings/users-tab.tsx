@@ -5,7 +5,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button' // Placeholder for future 'Invite' button
 
-export default function UsersTab({ users }: { users: any[] }) {
+interface UserRow {
+    id: string
+    name: string | null
+    email: string
+    role: string
+    active: boolean
+}
+
+export default function UsersTab({ users }: { users: UserRow[] }) {
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">

@@ -11,7 +11,7 @@ const companySchema = z.object({
     logoUrl: z.string().url().optional().or(z.literal('')),
 })
 
-export async function updateCompanySettings(prevState: any, formData: FormData) {
+export async function updateCompanySettings(prevState: unknown, formData: FormData) {
     const validated = companySchema.safeParse({
         name: formData.get('name'),
         baseCurrency: formData.get('baseCurrency'),
@@ -32,7 +32,7 @@ export async function updateCompanySettings(prevState: any, formData: FormData) 
     const { data: profile } = await supabase.from('profiles').select('company_id, role').eq('id', user.id).single()
 
     if (!profile || profile.role !== 'company_admin') {
-        return { error: 'Yetkiniz yok', success: false, message: '' }
+        return { error: 'Kayıt için Şirket Admini Rolünü seçmelisiniz', success: false, message: '' }
     }
 
     const { error } = await supabase.from('companies').update({
@@ -57,7 +57,7 @@ const fxRateSchema = z.object({
     rate: z.coerce.number().positive(),
 })
 
-export async function addFxRate(prevState: any, formData: FormData) {
+export async function addFxRate(prevState: unknown, formData: FormData) {
     const validated = fxRateSchema.safeParse({
         date: formData.get('date'),
         baseCurrency: formData.get('baseCurrency'),
