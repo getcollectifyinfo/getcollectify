@@ -248,22 +248,7 @@ export function ReceivablesClient({ debts, companyId, debtTypes, currencies, use
                     <CardHeader className="flex flex-col space-y-4 pb-4">
                         <div className="flex flex-row items-center justify-between space-y-0">
                             <CardTitle>Alacak Listesi & İşlem Takvimi</CardTitle>
-                            <div className="flex gap-2">
-                                {canAddDebts && (
-                                    <>
-                                        <Button variant="outline" onClick={() => setBulkImportOpen(true)} className="gap-2">
-                                            <UploadCloud className="h-4 w-4" />
-                                            Toplu Yükle (Excel)
-                                        </Button>
-                                        <Button onClick={() => setReceivableModalOpen(true)} className="gap-2">
-                                            <Plus className="h-4 w-4" />
-                                            Alacak Ekle
-                                        </Button>
-                                    </>
-                                )}
-                            </div>
                         </div>
-
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {/* Filters */}
@@ -278,7 +263,27 @@ export function ReceivablesClient({ debts, companyId, debtTypes, currencies, use
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
-                            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 justify-end">
+                                {canAddDebts && (
+                                    <>
+                                        <Button variant="outline" size="sm" onClick={() => setBulkImportOpen(true)} className="gap-2 hidden md:flex">
+                                            <UploadCloud className="h-4 w-4" />
+                                            Toplu Yükle
+                                        </Button>
+                                        <Button variant="outline" size="icon" onClick={() => setBulkImportOpen(true)} className="md:hidden" title="Toplu Yükle">
+                                            <UploadCloud className="h-4 w-4" />
+                                        </Button>
+                                        
+                                        <Button size="sm" onClick={() => setReceivableModalOpen(true)} className="gap-2 hidden md:flex">
+                                            <Plus className="h-4 w-4" />
+                                            Alacak Ekle
+                                        </Button>
+                                        <Button size="icon" onClick={() => setReceivableModalOpen(true)} className="md:hidden" title="Alacak Ekle">
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                        <div className="w-px h-6 bg-border mx-1" />
+                                    </>
+                                )}
                                 <div className="flex items-center bg-muted p-1 rounded-lg">
                                     <Button
                                         variant={statusFilter === 'all' ? 'secondary' : 'ghost'}
