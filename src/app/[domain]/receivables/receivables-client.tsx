@@ -264,8 +264,10 @@ export function ReceivablesClient({ debts, companyId, debtTypes, currencies, use
                             </div>
                         </div>
 
+                    </CardHeader>
+                    <CardContent className="space-y-4">
                         {/* Filters */}
-                        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-muted/20 p-4 rounded-lg border">
+                        <div className="w-full flex flex-col md:flex-row gap-4 items-center justify-between bg-muted/20 p-4 rounded-lg border">
                             <div className="relative w-full md:w-96">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -308,8 +310,7 @@ export function ReceivablesClient({ debts, companyId, debtTypes, currencies, use
                                 </Button>
                             </div>
                         </div>
-                    </CardHeader>
-                    <CardContent>
+
                         <Table>
                             <TableHeader>
                                 <TableRow>
