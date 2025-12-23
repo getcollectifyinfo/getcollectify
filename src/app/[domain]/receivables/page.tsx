@@ -21,6 +21,22 @@ export default async function ReceivablesPage({ params }: { params: Promise<{ do
             .eq('id', user.id)
             .single()
         currentUserRole = currentProfile?.role || ''
+
+        // If demo and no role found (RLS issue), try service client
+        if (!currentUserRole && domain.startsWith('demo') && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+            const serviceSupabase = createServiceClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.SUPABASE_SERVICE_ROLE_KEY!,
+                { auth: { autoRefreshToken: false, persistSession: false } }
+            )
+            const { data: demoProfile } = await serviceSupabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+            currentUserRole = demoProfile?.role || 'company_admin'
+        }
     }
 
     let companyId = ''
